@@ -18,6 +18,7 @@ export async function sendNotification(
   const result: DeliveryResult = {
     channel,
     status: 'pending',
+    retryCount: 0,
   };
 
   try {
@@ -208,6 +209,7 @@ export async function sendCustomerDefaultWebhook(
   const result: DeliveryResult = {
     channel: 'webhook',
     status: 'pending',
+    retryCount: 0,
   };
 
   const customer = await getCustomer(customerId);

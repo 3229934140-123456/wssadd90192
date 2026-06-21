@@ -97,6 +97,7 @@ export interface DeliveryResult {
   lastError?: string;
   nextRetryAt?: number;
   firstFailedAt?: number;
+  paused?: boolean;
 }
 
 export interface MonitorData {

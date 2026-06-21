@@ -117,12 +117,38 @@ router.post('/:customerId/:id/false-positive', async (req: Request, res: Respons
 router.post('/:customerId/:id/retry/:channel', async (req: Request, res: Response, next) => {
   try {
     const { customerId, id, channel } = req.params;
+    const { ruleId } = req.body;
     const result = await alertService.retryAlertChannel(
       id,
       channel as NotificationChannel,
-      customerId
+      customerId,
+      ruleId
     );
     res.success(result, '重发成功');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:customerId/retry/queue', async (req: Request, res: Response, next) => {
+  try {
+    const { customerId } = req.params;
+    const result = await alertService.listRetryQueue(customerId);
+    res.success(result, '获取重试队列成功');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/:customerId/retry/pause', async (req: Request, res: Response, next) => {
+  try {
+    const { customerId } = req.params;
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.fail('items 不能为空');
+    }
+    const result = await alertService.updateRetryPauseStatus(customerId, items);
+    res.success(result, `已更新 ${result.updated} 条记录`);
   } catch (err) {
     next(err);
   }

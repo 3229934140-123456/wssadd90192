@@ -352,14 +352,16 @@ export async function batchImportWords(
         let wordPackage = packageCache[cacheKey];
 
         if (!wordPackage) {
-          wordPackage = db.data.wordPackages.find(
+          const existingPackage = db.data.wordPackages.find(
             (wp) =>
               wp.customerId === customerId &&
               wp.name === item.packageName &&
               wp.type === packageType
           );
 
-          if (!wordPackage) {
+          if (existingPackage) {
+            wordPackage = existingPackage;
+          } else {
             const newPackage: WordPackage = {
               id: generateId(),
               name: item.packageName,

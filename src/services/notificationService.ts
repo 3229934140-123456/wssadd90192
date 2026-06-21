@@ -91,15 +91,15 @@ async function sendWechat(
   logger.debug('[WeChat] payload:', payload);
 
   try {
-    await axios.post(webhookUrl, payload, { timeout: 5000 });
+    const response = await axios.post(webhookUrl, payload, { timeout: 5000 });
     result.status = 'delivered';
     result.deliveredAt = now();
     result.messageId = `wechat_${alert.id}_${Date.now()}`;
+    logger.debug(`[WeChat] 发送成功，响应状态: ${response.status}`);
   } catch (err: any) {
-    logger.warn(`[WeChat] webhook 调用失败，使用模拟成功: ${err.message}`);
-    result.status = 'delivered';
-    result.deliveredAt = now();
-    result.messageId = `wechat_mock_${alert.id}_${Date.now()}`;
+    result.status = 'failed';
+    result.errorMessage = err.message || '企业微信 webhook 调用失败';
+    logger.error(`[WeChat] webhook 调用失败: ${err.message}`);
   }
 
   return result;
@@ -128,15 +128,15 @@ async function sendDingtalk(
   logger.info(`[DingTalk] 模拟发送钉钉 webhook=${webhookUrl}`);
 
   try {
-    await axios.post(webhookUrl, payload, { timeout: 5000 });
+    const response = await axios.post(webhookUrl, payload, { timeout: 5000 });
     result.status = 'delivered';
     result.deliveredAt = now();
     result.messageId = `dingtalk_${alert.id}_${Date.now()}`;
+    logger.debug(`[DingTalk] 发送成功，响应状态: ${response.status}`);
   } catch (err: any) {
-    logger.warn(`[DingTalk] webhook 调用失败，使用模拟成功: ${err.message}`);
-    result.status = 'delivered';
-    result.deliveredAt = now();
-    result.messageId = `dingtalk_mock_${alert.id}_${Date.now()}`;
+    result.status = 'failed';
+    result.errorMessage = err.message || '钉钉 webhook 调用失败';
+    logger.error(`[DingTalk] webhook 调用失败: ${err.message}`);
   }
 
   return result;

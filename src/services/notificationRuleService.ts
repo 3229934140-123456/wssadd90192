@@ -39,6 +39,14 @@ export async function getNotificationRuleOrThrow(id: string): Promise<Notificati
   return rule;
 }
 
+export async function getNotificationRuleOrThrowByCustomer(id: string, customerId: string): Promise<NotificationRule> {
+  const rule = await getNotificationRuleOrThrow(id);
+  if (rule.customerId !== customerId) {
+    throw new AppError('通知规则不存在', 404);
+  }
+  return rule;
+}
+
 export async function createNotificationRule(
   dto: CreateNotificationRuleDTO
 ): Promise<NotificationRule> {

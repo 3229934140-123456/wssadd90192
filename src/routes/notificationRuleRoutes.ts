@@ -15,7 +15,7 @@ router.get('/:customerId/notification-rules', async (req: Request, res: Response
 
 router.get('/:customerId/notification-rules/:id', async (req: Request, res: Response, next) => {
   try {
-    const rule = await notificationRuleService.getNotificationRuleOrThrow(req.params.id);
+    const rule = await notificationRuleService.getNotificationRuleOrThrowByCustomer(req.params.id, req.params.customerId);
     res.success(rule, '获取通知规则成功');
   } catch (err) {
     next(err);
@@ -45,6 +45,7 @@ router.post('/:customerId/notification-rules', async (req: Request, res: Respons
 
 router.put('/:customerId/notification-rules/:id', async (req: Request, res: Response, next) => {
   try {
+    await notificationRuleService.getNotificationRuleOrThrowByCustomer(req.params.id, req.params.customerId);
     const rule = await notificationRuleService.updateNotificationRule(req.params.id, req.body);
     res.success(rule, '更新通知规则成功');
   } catch (err) {
@@ -54,6 +55,7 @@ router.put('/:customerId/notification-rules/:id', async (req: Request, res: Resp
 
 router.delete('/:customerId/notification-rules/:id', async (req: Request, res: Response, next) => {
   try {
+    await notificationRuleService.getNotificationRuleOrThrowByCustomer(req.params.id, req.params.customerId);
     await notificationRuleService.deleteNotificationRule(req.params.id);
     res.success(null, '删除通知规则成功');
   } catch (err) {

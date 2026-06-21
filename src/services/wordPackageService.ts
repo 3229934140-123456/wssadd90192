@@ -45,6 +45,14 @@ export async function getWordPackageOrThrow(id: string): Promise<WordPackage> {
   return wp;
 }
 
+export async function getWordPackageOrThrowByCustomer(id: string, customerId: string): Promise<WordPackage> {
+  const wp = await getWordPackageOrThrow(id);
+  if (wp.customerId !== customerId) {
+    throw new AppError('词包不存在', 404);
+  }
+  return wp;
+}
+
 export async function createWordPackage(dto: CreateWordPackageDTO): Promise<WordPackage> {
   await getCustomerOrThrow(dto.customerId);
   const db = getDB();
@@ -132,4 +140,14 @@ export async function removeWordsFromPackage(
   wp.updatedAt = now();
   await saveDB();
   return wp;
+}
+
+export async function getWordPackagesContainingWord(
+  customerId: string,
+  wordId: string
+): Promise<WordPackage[]> {
+  const db = getDB();
+  return db.data.wordPackages.filter(
+    (wp) => wp.customerId === customerId && wp.wordIds.includes(wordId)
+  );
 }

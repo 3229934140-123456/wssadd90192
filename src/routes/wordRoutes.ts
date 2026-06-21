@@ -28,7 +28,7 @@ router.get('/:customerId/words', async (req: Request, res: Response, next) => {
 
 router.get('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
-    const word = await wordService.getWordOrThrow(req.params.id);
+    const word = await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
     res.success(word, '获取敏感词成功');
   } catch (err) {
     next(err);
@@ -70,6 +70,7 @@ router.post('/:customerId/words/batch', async (req: Request, res: Response, next
 
 router.put('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
+    await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
     const word = await wordService.updateWord(req.params.id, req.body);
     res.success(word, '更新敏感词成功');
   } catch (err) {
@@ -79,6 +80,7 @@ router.put('/:customerId/words/:id', async (req: Request, res: Response, next) =
 
 router.delete('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
+    await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
     await wordService.deleteWord(req.params.id);
     res.success(null, '删除敏感词成功');
   } catch (err) {

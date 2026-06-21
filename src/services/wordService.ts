@@ -65,6 +65,14 @@ export async function getWordOrThrow(id: string): Promise<Word> {
   return word;
 }
 
+export async function getWordOrThrowByCustomer(id: string, customerId: string): Promise<Word> {
+  const word = await getWordOrThrow(id);
+  if (word.customerId !== customerId) {
+    throw new AppError('敏感词不存在', 404);
+  }
+  return word;
+}
+
 export async function createWord(dto: CreateWordDTO): Promise<Word> {
   await getCustomerOrThrow(dto.customerId);
   const db = getDB();

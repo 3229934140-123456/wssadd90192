@@ -1,210 +1,138 @@
 {
   "customers": [
     {
-      "id": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "name": "测试舆情公司",
+      "id": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "name": "客户A-舆情科技",
       "contact": "张经理",
       "phone": "13800138000",
       "email": "zhang@example.com",
       "webhookUrl": "https://example.com/webhook/alert",
-      "createdAt": 1782058033025,
-      "updatedAt": 1782058033025
+      "createdAt": 1782059160728,
+      "updatedAt": 1782059160728
+    },
+    {
+      "id": "bc4666d4-841b-4842-a44c-599c1dfc9f2a",
+      "name": "客户B-数据公司",
+      "contact": "李总",
+      "phone": "13900139000",
+      "createdAt": 1782059160734,
+      "updatedAt": 1782059160734
     }
   ],
   "words": [
     {
-      "id": "9418277b-de3c-43c6-8889-7911f6f0ad49",
-      "word": "负面评价",
-      "type": "exclusive",
-      "level": "warning",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "createdAt": 1782058033031,
-      "updatedAt": 1782058033031
-    },
-    {
-      "id": "a8899a66-7b9d-4ad9-ab4c-b695f89811d3",
+      "id": "dcfb76c9-33a4-4927-b59a-71589a24e7cb",
       "word": "质量问题",
       "type": "exclusive",
-      "level": "critical",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "createdAt": 1782058033031,
-      "updatedAt": 1782058033031
+      "level": "warning",
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "createdAt": 1782059160739,
+      "updatedAt": 1782059160739
     },
     {
-      "id": "d73266a6-36da-49a2-bd5e-a1251d4566ae",
-      "word": "行业丑闻",
-      "type": "industry",
-      "level": "critical",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "createdAt": 1782058033031,
-      "updatedAt": 1782058033031
+      "id": "d1e99b1b-1d64-413c-8b5e-89aaef161f5a",
+      "word": "负面评价",
+      "type": "exclusive",
+      "level": "info",
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "createdAt": 1782059160739,
+      "updatedAt": 1782059160739
     },
     {
-      "id": "c1532a88-35a7-4a80-bbb2-1d4fe5d1ae1e",
-      "word": "产品召回",
-      "type": "event",
-      "level": "critical",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "createdAt": 1782058033031,
-      "updatedAt": 1782058033031
-    },
-    {
-      "id": "ee28b271-b0ec-4554-b1b5-d3e8a661587e",
+      "id": "c46827ab-520e-4547-aa0e-1cec11ef248c",
       "word": "用户投诉",
       "type": "exclusive",
       "level": "info",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "createdAt": 1782058033031,
-      "updatedAt": 1782058033031
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "createdAt": 1782059160739,
+      "updatedAt": 1782059160739
     }
   ],
   "wordPackages": [
     {
-      "id": "c291634b-8b6b-4ee8-aa69-eb5c95c022d2",
-      "name": "客户专属词包",
+      "id": "76c84315-e798-4ace-900e-c4ac6ef6c000",
+      "name": "客户A专属词包",
       "type": "exclusive",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "description": "客户自定义的专属敏感词",
-      "wordIds": [],
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "description": "客户A的专属敏感词包",
+      "wordIds": [
+        "dcfb76c9-33a4-4927-b59a-71589a24e7cb"
+      ],
       "defaultLevel": "warning",
-      "createdAt": 1782058033040,
-      "updatedAt": 1782058033040
-    },
-    {
-      "id": "f8f9310f-4292-42c6-90fc-5ba0d271b5a2",
-      "name": "行业通用词包",
-      "type": "industry",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "description": "行业通用敏感词",
-      "wordIds": [],
-      "defaultLevel": "warning",
-      "createdAt": 1782058033044,
-      "updatedAt": 1782058033044
-    },
-    {
-      "id": "fad5e214-d52d-4715-b137-07b157a51395",
-      "name": "315专项词包",
-      "type": "event",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "description": "315晚会专项监测词包",
-      "wordIds": [],
-      "defaultLevel": "critical",
-      "createdAt": 1782058033048,
-      "updatedAt": 1782058033048
+      "createdAt": 1782059160744,
+      "updatedAt": 1782059161286
     }
   ],
   "notificationRules": [
     {
-      "id": "61d22c9d-278f-478f-a8cc-bfd8796637f6",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "channel": "sms",
-      "level": "critical",
-      "enabled": true,
-      "phoneNumbers": [
-        "13800138000",
-        "13900139000"
-      ],
-      "createdAt": 1782058033053,
-      "updatedAt": 1782058033053
-    },
-    {
-      "id": "fdb707cb-6d13-4c17-b2a8-e68cae95079c",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
+      "id": "01a1a9b8-b084-4dbf-b061-5dc35e137906",
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
       "channel": "wechat",
-      "level": "warning",
-      "enabled": true,
-      "webhookUrl": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key",
-      "createdAt": 1782058033058,
-      "updatedAt": 1782058033058
-    },
-    {
-      "id": "c32599ce-7890-46ee-8110-b9617c42ae68",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "channel": "webhook",
       "level": "info",
       "enabled": true,
-      "webhookUrl": "https://example.com/api/alert-callback",
-      "createdAt": 1782058033062,
-      "updatedAt": 1782058033062
+      "webhookUrl": "https://invalid-webhook-url.example.com/this-will-fail",
+      "createdAt": 1782059160753,
+      "updatedAt": 1782059160753
     }
   ],
   "alerts": [
     {
-      "id": "7364480c-6ff4-4c24-98c8-2e92a4b245ec",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
+      "id": "c25e52f0-3faf-42bf-b0d5-654d34e3e9ee",
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
       "title": "某平台出现大量质量问题投诉",
-      "content": "近期有多位用户反馈产品存在严重的质量问题，包括外观瑕疵、功能故障等。部分用户表示已经向相关部门投诉，事件有扩大趋势。",
+      "content": "近期有多位用户反馈产品存在严重的质量问题，包括外观瑕疵、功能故障等。",
       "source": "新浪微博",
-      "sourceUrl": "https://weibo.com/example/12345",
-      "sourceWeight": 1.5,
+      "sourceWeight": 1,
       "hitWords": [
         "质量问题"
       ],
       "level": "critical",
-      "score": 105,
-      "status": "false_positive",
+      "score": 70,
+      "deliveryStatus": "failed",
+      "acknowledged": true,
+      "falsePositive": false,
       "channels": [
-        "sms",
-        "wechat",
-        "webhook"
+        "wechat"
       ],
       "deliveryResults": [
         {
-          "channel": "sms",
-          "status": "delivered",
-          "deliveredAt": 1782058033068,
-          "messageId": "sms_7364480c-6ff4-4c24-98c8-2e92a4b245ec_1782058033068"
-        },
-        {
           "channel": "wechat",
-          "status": "delivered",
-          "deliveredAt": 1782058033272,
-          "messageId": "wechat_7364480c-6ff4-4c24-98c8-2e92a4b245ec_1782058033272"
-        },
-        {
-          "channel": "webhook",
           "status": "failed",
           "errorMessage": "Client network socket disconnected before secure TLS connection was established"
         }
       ],
-      "createdAt": 1782058033066,
-      "updatedAt": 1782058037198,
-      "acknowledgedAt": 1782058037192,
-      "falsePositiveAt": 1782058037198
+      "createdAt": 1782059160757,
+      "updatedAt": 1782059161667,
+      "acknowledgedAt": 1782059161667
     },
     {
-      "id": "6847bbd8-29e5-4b5a-8169-b5d4d92f4af9",
-      "customerId": "eef68a42-f404-42d1-87a3-b11778b26270",
-      "title": "用户对服务的负面评价汇总",
-      "content": "本周收集到一些用户的负面评价，主要集中在客服响应速度方面。整体评价偏向负面，但尚未造成大规模影响。",
-      "source": "知乎",
-      "sourceUrl": "https://zhihu.com/example/123",
-      "sourceWeight": 1,
+      "id": "b17b18de-0915-440d-b3c0-072f83e3a000",
+      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "title": "又一起质量问题曝光",
+      "content": "媒体报道了新的质量问题，涉及多个批次的产品。",
+      "source": "腾讯新闻",
+      "sourceWeight": 1.2,
       "hitWords": [
-        "负面评价"
+        "质量问题"
       ],
       "level": "warning",
-      "score": 50,
-      "status": "delivered",
+      "score": 60,
+      "deliveryStatus": "failed",
+      "acknowledged": false,
+      "falsePositive": true,
       "channels": [
-        "wechat",
-        "webhook"
+        "wechat"
       ],
       "deliveryResults": [
         {
           "channel": "wechat",
-          "status": "delivered",
-          "deliveredAt": 1782058036399,
-          "messageId": "wechat_6847bbd8-29e5-4b5a-8169-b5d4d92f4af9_1782058036399"
-        },
-        {
-          "channel": "webhook",
           "status": "failed",
-          "errorMessage": "Request failed with status code 405"
+          "errorMessage": "Client network socket disconnected before secure TLS connection was established"
         }
       ],
-      "createdAt": 1782058036304,
-      "updatedAt": 1782058037176
+      "createdAt": 1782059161290,
+      "updatedAt": 1782059161702,
+      "falsePositiveAt": 1782059161702
     }
   ]
 }

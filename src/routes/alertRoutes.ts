@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as alertService from '../services/alertService';
-import { AlertStatus, NotificationLevel } from '../models';
+import { DeliveryStatus, NotificationLevel } from '../models';
 
 const router = Router();
 
@@ -39,7 +39,13 @@ router.get('/:customerId', async (req: Request, res: Response, next) => {
     const { customerId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
-    const status = req.query.status as AlertStatus | undefined;
+    const deliveryStatus = req.query.deliveryStatus as DeliveryStatus | undefined;
+    const acknowledged = req.query.acknowledged !== undefined 
+      ? req.query.acknowledged === 'true' 
+      : undefined;
+    const falsePositive = req.query.falsePositive !== undefined 
+      ? req.query.falsePositive === 'true' 
+      : undefined;
     const level = req.query.level as NotificationLevel | undefined;
     const source = req.query.source as string | undefined;
     const startTime = req.query.startTime
@@ -49,7 +55,9 @@ router.get('/:customerId', async (req: Request, res: Response, next) => {
 
     const result = await alertService.listAlerts({
       customerId,
-      status,
+      deliveryStatus,
+      acknowledged,
+      falsePositive,
       level,
       source,
       startTime,
@@ -66,10 +74,7 @@ router.get('/:customerId', async (req: Request, res: Response, next) => {
 
 router.get('/:customerId/:id', async (req: Request, res: Response, next) => {
   try {
-    const alert = await alertService.getAlertOrThrow(req.params.id);
-    if (alert.customerId !== req.params.customerId) {
-      return res.fail('告警不存在', 404);
-    }
+    const alert = await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
     res.success(alert, '获取告警详情成功');
   } catch (err) {
     next(err);
@@ -78,10 +83,7 @@ router.get('/:customerId/:id', async (req: Request, res: Response, next) => {
 
 router.get('/:customerId/:id/delivery', async (req: Request, res: Response, next) => {
   try {
-    const alert = await alertService.getAlertOrThrow(req.params.id);
-    if (alert.customerId !== req.params.customerId) {
-      return res.fail('告警不存在', 404);
-    }
+    await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
     const status = await alertService.getAlertDeliveryStatus(req.params.id);
     res.success(status, '获取告警送达状态成功');
   } catch (err) {
@@ -91,10 +93,7 @@ router.get('/:customerId/:id/delivery', async (req: Request, res: Response, next
 
 router.post('/:customerId/:id/acknowledge', async (req: Request, res: Response, next) => {
   try {
-    const alert = await alertService.getAlertOrThrow(req.params.id);
-    if (alert.customerId !== req.params.customerId) {
-      return res.fail('告警不存在', 404);
-    }
+    await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
     const result = await alertService.acknowledgeAlert(req.params.id);
     res.success(result, '告警已确认');
   } catch (err) {
@@ -104,10 +103,7 @@ router.post('/:customerId/:id/acknowledge', async (req: Request, res: Response, 
 
 router.post('/:customerId/:id/false-positive', async (req: Request, res: Response, next) => {
   try {
-    const alert = await alertService.getAlertOrThrow(req.params.id);
-    if (alert.customerId !== req.params.customerId) {
-      return res.fail('告警不存在', 404);
-    }
+    await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
     const result = await alertService.markFalsePositive(req.params.id);
     res.success(result, '已标记为误报');
   } catch (err) {

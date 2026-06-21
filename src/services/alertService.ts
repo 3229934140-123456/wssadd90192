@@ -1,7 +1,7 @@
 import { getDB, saveDB } from '../database';
 import {
   Alert,
-  AlertStatus,
+  DeliveryStatus,
   MonitorData,
   NotificationLevel,
   Word,
@@ -13,12 +13,25 @@ import { AppError } from '../middleware/errorHandler';
 import { getWordsByCustomer } from './wordService';
 import { getActiveRulesForCustomer } from './notificationRuleService';
 import { sendNotification, sendCustomerDefaultWebhook } from './notificationService';
+import { getWordPackagesContainingWord } from './wordPackageService';
 import { config } from '../config';
 import logger from '../utils/logger';
 
+const LEVEL_ORDER: Record<NotificationLevel, number> = {
+  info: 1,
+  warning: 2,
+  critical: 3,
+};
+
+function getHigherLevel(a: NotificationLevel, b: NotificationLevel): NotificationLevel {
+  return LEVEL_ORDER[a] >= LEVEL_ORDER[b] ? a : b;
+}
+
 export interface AlertQueryParams {
   customerId: string;
-  status?: AlertStatus;
+  deliveryStatus?: DeliveryStatus;
+  acknowledged?: boolean;
+  falsePositive?: boolean;
   level?: NotificationLevel;
   source?: string;
   startTime?: number;
@@ -32,45 +45,59 @@ export interface AlertMatchResult {
   highestLevel: NotificationLevel;
   score: number;
   matchedWords: Word[];
+  wordLevels: Record<string, { wordLevel: NotificationLevel; packageLevel: NotificationLevel | null; finalLevel: NotificationLevel }>;
 }
 
-export function matchSensitiveWords(content: string, words: Word[]): AlertMatchResult {
+export function matchSensitiveWords(content: string, words: Word[]): { matchedWords: Word[]; hitWordStrings: string[] } {
   const lowerContent = content.toLowerCase();
-  const hitWordObjects: Word[] = [];
+  const matchedWords: Word[] = [];
   const hitWordStrings: string[] = [];
 
   for (const word of words) {
     if (lowerContent.includes(word.word.toLowerCase())) {
-      hitWordObjects.push(word);
+      matchedWords.push(word);
       if (!hitWordStrings.includes(word.word)) {
         hitWordStrings.push(word.word);
       }
     }
   }
 
-  const levelOrder: Record<NotificationLevel, number> = {
-    info: 1,
-    warning: 2,
-    critical: 3,
-  };
+  return { matchedWords, hitWordStrings };
+}
 
+export async function calculateAlertLevelWithPackages(
+  customerId: string,
+  matchedWords: Word[]
+): Promise<{ highestLevel: NotificationLevel; wordLevels: AlertMatchResult['wordLevels'] }> {
+  const wordLevels: AlertMatchResult['wordLevels'] = {};
   let highestLevel: NotificationLevel = 'info';
-  for (const w of hitWordObjects) {
-    if (levelOrder[w.level] > levelOrder[highestLevel]) {
-      highestLevel = w.level;
+
+  for (const word of matchedWords) {
+    const packages = await getWordPackagesContainingWord(customerId, word.id);
+    
+    let packageLevel: NotificationLevel | null = null;
+    for (const wp of packages) {
+      if (packageLevel === null || LEVEL_ORDER[wp.defaultLevel] > LEVEL_ORDER[packageLevel]) {
+        packageLevel = wp.defaultLevel;
+      }
+    }
+
+    const finalLevel = packageLevel !== null 
+      ? getHigherLevel(word.level, packageLevel)
+      : word.level;
+
+    wordLevels[word.word] = {
+      wordLevel: word.level,
+      packageLevel,
+      finalLevel,
+    };
+
+    if (LEVEL_ORDER[finalLevel] > LEVEL_ORDER[highestLevel]) {
+      highestLevel = finalLevel;
     }
   }
 
-  const baseScore = hitWordStrings.length * 10;
-  const levelBonus = levelOrder[highestLevel] * 20;
-  const score = baseScore + levelBonus;
-
-  return {
-    hitWords: hitWordStrings,
-    highestLevel,
-    score,
-    matchedWords: hitWordObjects,
-  };
+  return { highestLevel, wordLevels };
 }
 
 export function calculateFinalScore(baseScore: number, sourceWeight: number): number {
@@ -88,19 +115,28 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
   }
 
   const fullContent = `${data.title}\n${data.content}`;
-  const matchResult = matchSensitiveWords(fullContent, words);
+  const { matchedWords, hitWordStrings } = matchSensitiveWords(fullContent, words);
 
-  if (matchResult.hitWords.length === 0) {
+  if (matchedWords.length === 0) {
     logger.info('[Alert] 未命中任何敏感词，跳过');
     return null;
   }
 
-  logger.info(
-    `[Alert] 命中 ${matchResult.hitWords.length} 个敏感词，最高等级: ${matchResult.highestLevel}`
+  const { highestLevel, wordLevels } = await calculateAlertLevelWithPackages(
+    data.customerId,
+    matchedWords
   );
 
+  logger.info(
+    `[Alert] 命中 ${hitWordStrings.length} 个敏感词，最高等级: ${highestLevel}`
+  );
+  logger.debug('[Alert] 词等级详情:', wordLevels);
+
+  const baseScore = hitWordStrings.length * 10;
+  const levelBonus = LEVEL_ORDER[highestLevel] * 20;
+  const baseScoreTotal = baseScore + levelBonus;
   const sourceWeight = data.sourceWeight ?? config.defaultSourceWeight;
-  const finalScore = calculateFinalScore(matchResult.score, sourceWeight);
+  const finalScore = calculateFinalScore(baseScoreTotal, sourceWeight);
 
   const db = getDB();
   const alert: Alert = {
@@ -111,10 +147,12 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
     source: data.source,
     sourceUrl: data.sourceUrl,
     sourceWeight,
-    hitWords: matchResult.hitWords,
-    level: matchResult.highestLevel,
+    hitWords: hitWordStrings,
+    level: highestLevel,
     score: finalScore,
-    status: 'pending',
+    deliveryStatus: 'pending',
+    acknowledged: false,
+    falsePositive: false,
     channels: [],
     deliveryResults: [],
     createdAt: now(),
@@ -159,17 +197,17 @@ async function distributeAlert(alert: Alert): Promise<void> {
   if (alertInDB) {
     alertInDB.channels = channels;
     alertInDB.deliveryResults = results;
-    alertInDB.status = calculateOverallStatus(results);
+    alertInDB.deliveryStatus = calculateOverallDeliveryStatus(results);
     alertInDB.updatedAt = now();
     await saveDB();
   }
 
   logger.info(
-    `[Alert] 告警分发完成 alertId=${alert.id} status=${alertInDB?.status} channels=${channels.join(',')}`
+    `[Alert] 告警分发完成 alertId=${alert.id} deliveryStatus=${alertInDB?.deliveryStatus} channels=${channels.join(',')}`
   );
 }
 
-function calculateOverallStatus(results: DeliveryResult[]): AlertStatus {
+function calculateOverallDeliveryStatus(results: DeliveryResult[]): DeliveryStatus {
   if (results.length === 0) return 'pending';
 
   const hasDelivered = results.some((r) => r.status === 'delivered');
@@ -184,8 +222,14 @@ export async function listAlerts(params: AlertQueryParams): Promise<{ list: Aler
   const db = getDB();
   let alerts = db.data.alerts.filter((a) => a.customerId === params.customerId);
 
-  if (params.status) {
-    alerts = alerts.filter((a) => a.status === params.status);
+  if (params.deliveryStatus) {
+    alerts = alerts.filter((a) => a.deliveryStatus === params.deliveryStatus);
+  }
+  if (params.acknowledged !== undefined) {
+    alerts = alerts.filter((a) => a.acknowledged === params.acknowledged);
+  }
+  if (params.falsePositive !== undefined) {
+    alerts = alerts.filter((a) => a.falsePositive === params.falsePositive);
   }
   if (params.level) {
     alerts = alerts.filter((a) => a.level === params.level);
@@ -226,12 +270,20 @@ export async function getAlertOrThrow(id: string): Promise<Alert> {
   return alert;
 }
 
-export async function acknowledgeAlert(id: string): Promise<Alert> {
+export async function getAlertOrThrowByCustomer(id: string, customerId: string): Promise<Alert> {
   const alert = await getAlertOrThrow(id);
+  if (alert.customerId !== customerId) {
+    throw new AppError('告警不存在', 404);
+  }
+  return alert;
+}
+
+export async function acknowledgeAlert(id: string): Promise<Alert> {
+  await getAlertOrThrow(id);
   const db = getDB();
 
   const alertInDB = db.data.alerts.find((a) => a.id === id)!;
-  alertInDB.status = 'acknowledged';
+  alertInDB.acknowledged = true;
   alertInDB.acknowledgedAt = now();
   alertInDB.updatedAt = now();
 
@@ -242,11 +294,11 @@ export async function acknowledgeAlert(id: string): Promise<Alert> {
 }
 
 export async function markFalsePositive(id: string): Promise<Alert> {
-  const alert = await getAlertOrThrow(id);
+  await getAlertOrThrow(id);
   const db = getDB();
 
   const alertInDB = db.data.alerts.find((a) => a.id === id)!;
-  alertInDB.status = 'false_positive';
+  alertInDB.falsePositive = true;
   alertInDB.falsePositiveAt = now();
   alertInDB.updatedAt = now();
 
@@ -258,14 +310,22 @@ export async function markFalsePositive(id: string): Promise<Alert> {
 
 export async function getAlertDeliveryStatus(id: string): Promise<{
   alertId: string;
-  overallStatus: AlertStatus;
+  deliveryStatus: DeliveryStatus;
+  acknowledged: boolean;
+  acknowledgedAt?: number;
+  falsePositive: boolean;
+  falsePositiveAt?: number;
   deliveries: DeliveryResult[];
 }> {
   const alert = await getAlertOrThrow(id);
 
   return {
     alertId: alert.id,
-    overallStatus: alert.status,
+    deliveryStatus: alert.deliveryStatus,
+    acknowledged: alert.acknowledged,
+    acknowledgedAt: alert.acknowledgedAt,
+    falsePositive: alert.falsePositive,
+    falsePositiveAt: alert.falsePositiveAt,
     deliveries: alert.deliveryResults,
   };
 }
@@ -273,7 +333,9 @@ export async function getAlertDeliveryStatus(id: string): Promise<{
 export async function getAlertStatistics(customerId: string, days: number = 7): Promise<{
   total: number;
   byLevel: Record<NotificationLevel, number>;
-  byStatus: Record<AlertStatus, number>;
+  byDeliveryStatus: Record<DeliveryStatus, number>;
+  byAcknowledged: { acknowledged: number; unacknowledged: number };
+  byFalsePositive: { falsePositive: number; valid: number };
   bySource: Record<string, number>;
   trend: Array<{ date: string; count: number }>;
 }> {
@@ -289,20 +351,30 @@ export async function getAlertStatistics(customerId: string, days: number = 7): 
     warning: 0,
     critical: 0,
   };
-  const byStatus: Record<AlertStatus, number> = {
+  const byDeliveryStatus: Record<DeliveryStatus, number> = {
     pending: 0,
     delivered: 0,
     failed: 0,
-    acknowledged: 0,
-    false_positive: 0,
   };
+  const byAcknowledged = { acknowledged: 0, unacknowledged: 0 };
+  const byFalsePositive = { falsePositive: 0, valid: 0 };
   const bySource: Record<string, number> = {};
 
   const trendMap: Record<string, number> = {};
 
   for (const alert of alerts) {
     byLevel[alert.level]++;
-    byStatus[alert.status]++;
+    byDeliveryStatus[alert.deliveryStatus]++;
+    if (alert.acknowledged) {
+      byAcknowledged.acknowledged++;
+    } else {
+      byAcknowledged.unacknowledged++;
+    }
+    if (alert.falsePositive) {
+      byFalsePositive.falsePositive++;
+    } else {
+      byFalsePositive.valid++;
+    }
     bySource[alert.source] = (bySource[alert.source] || 0) + 1;
 
     const date = new Date(alert.createdAt).toISOString().split('T')[0];
@@ -316,7 +388,9 @@ export async function getAlertStatistics(customerId: string, days: number = 7): 
   return {
     total: alerts.length,
     byLevel,
-    byStatus,
+    byDeliveryStatus,
+    byAcknowledged,
+    byFalsePositive,
     bySource,
     trend,
   };

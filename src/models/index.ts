@@ -4,7 +4,7 @@ export type WordPackageType = 'exclusive' | 'industry' | 'event';
 
 export type NotificationChannel = 'sms' | 'wechat' | 'dingtalk' | 'webhook';
 
-export type AlertStatus = 'pending' | 'delivered' | 'failed' | 'acknowledged' | 'false_positive';
+export type DeliveryStatus = 'pending' | 'delivered' | 'failed';
 
 export interface Customer {
   id: string;
@@ -62,7 +62,9 @@ export interface Alert {
   hitWords: string[];
   level: NotificationLevel;
   score: number;
-  status: AlertStatus;
+  deliveryStatus: DeliveryStatus;
+  acknowledged: boolean;
+  falsePositive: boolean;
   channels: NotificationChannel[];
   deliveryResults: DeliveryResult[];
   acknowledgedAt?: number;
@@ -73,7 +75,7 @@ export interface Alert {
 
 export interface DeliveryResult {
   channel: NotificationChannel;
-  status: 'pending' | 'delivered' | 'failed';
+  status: DeliveryStatus;
   deliveredAt?: number;
   errorMessage?: string;
   messageId?: string;

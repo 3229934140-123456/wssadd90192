@@ -17,7 +17,7 @@ router.get('/:customerId/word-packages', async (req: Request, res: Response, nex
 
 router.get('/:customerId/word-packages/:id', async (req: Request, res: Response, next) => {
   try {
-    const wp = await wordPackageService.getWordPackageOrThrow(req.params.id);
+    const wp = await wordPackageService.getWordPackageOrThrowByCustomer(req.params.id, req.params.customerId);
     res.success(wp, '获取词包成功');
   } catch (err) {
     next(err);
@@ -47,6 +47,7 @@ router.post('/:customerId/word-packages', async (req: Request, res: Response, ne
 
 router.put('/:customerId/word-packages/:id', async (req: Request, res: Response, next) => {
   try {
+    await wordPackageService.getWordPackageOrThrowByCustomer(req.params.id, req.params.customerId);
     const wp = await wordPackageService.updateWordPackage(req.params.id, req.body);
     res.success(wp, '更新词包成功');
   } catch (err) {
@@ -56,6 +57,7 @@ router.put('/:customerId/word-packages/:id', async (req: Request, res: Response,
 
 router.delete('/:customerId/word-packages/:id', async (req: Request, res: Response, next) => {
   try {
+    await wordPackageService.getWordPackageOrThrowByCustomer(req.params.id, req.params.customerId);
     await wordPackageService.deleteWordPackage(req.params.id);
     res.success(null, '删除词包成功');
   } catch (err) {
@@ -70,6 +72,7 @@ router.post('/:customerId/word-packages/:id/words', async (req: Request, res: Re
     if (!Array.isArray(wordIds) || wordIds.length === 0) {
       return res.fail('词ID列表不能为空');
     }
+    await wordPackageService.getWordPackageOrThrowByCustomer(id, req.params.customerId);
     const wp = await wordPackageService.addWordsToPackage(id, wordIds);
     res.success(wp, '添加词到词包成功');
   } catch (err) {
@@ -84,6 +87,7 @@ router.delete('/:customerId/word-packages/:id/words', async (req: Request, res: 
     if (!Array.isArray(wordIds) || wordIds.length === 0) {
       return res.fail('词ID列表不能为空');
     }
+    await wordPackageService.getWordPackageOrThrowByCustomer(id, req.params.customerId);
     const wp = await wordPackageService.removeWordsFromPackage(id, wordIds);
     res.success(wp, '从词包移除词成功');
   } catch (err) {

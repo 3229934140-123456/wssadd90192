@@ -130,8 +130,10 @@ export interface BatchImportWordItem {
   word: string;
   type: WordPackageType;
   level: NotificationLevel;
+  customerId?: string;
   packageName?: string;
   packageType?: WordPackageType;
+  packageDefaultLevel?: NotificationLevel;
 }
 
 export interface BatchImportResult {

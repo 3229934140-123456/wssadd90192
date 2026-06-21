@@ -313,6 +313,16 @@ export async function batchImportWords(
         continue;
       }
 
+      if (item.customerId && item.customerId !== customerId) {
+        result.failed++;
+        result.failedItems.push({ 
+          word: item.word, 
+          reason: `客户归属不匹配（期望: ${customerId}, 实际: ${item.customerId}）`, 
+          row 
+        });
+        continue;
+      }
+
       const existingWord = db.data.words.find(
         (w) => w.customerId === customerId && w.word === item.word && w.type === item.type
       );
@@ -337,6 +347,7 @@ export async function batchImportWords(
 
       if (item.packageName) {
         const packageType = item.packageType || item.type;
+        const packageDefaultLevel = item.packageDefaultLevel || item.level;
         const cacheKey = `${packageType}-${item.packageName}`;
         let wordPackage = packageCache[cacheKey];
 
@@ -354,7 +365,7 @@ export async function batchImportWords(
               name: item.packageName,
               type: packageType,
               customerId,
-              defaultLevel: item.level,
+              defaultLevel: packageDefaultLevel,
               wordIds: [],
               createdAt: now(),
               updatedAt: now(),
@@ -405,7 +416,13 @@ export async function batchImportWords(
 
 export async function exportWordsWithPackages(
   customerId: string
-): Promise<Array<{ word: string; type: WordPackageType; level: NotificationLevel; packages: Array<{ name: string; type: WordPackageType; defaultLevel: NotificationLevel }> }>> {
+): Promise<Array<{ 
+  word: string; 
+  type: WordPackageType; 
+  level: NotificationLevel; 
+  customerId: string;
+  packages: Array<{ name: string; type: WordPackageType; defaultLevel: NotificationLevel }> 
+}>> {
   const db = getDB();
   const words = db.data.words.filter((w) => w.customerId === customerId);
   const packages = db.data.wordPackages.filter((wp) => wp.customerId === customerId);
@@ -416,6 +433,7 @@ export async function exportWordsWithPackages(
       word: word.word,
       type: word.type,
       level: word.level,
+      customerId: word.customerId,
       packages: wordPackages.map((wp) => ({
         name: wp.name,
         type: wp.type,

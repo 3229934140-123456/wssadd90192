@@ -77,13 +77,6 @@ export async function createNotificationRule(
   await getCustomerOrThrow(dto.customerId);
   const db = getDB();
 
-  const existingSameChannelAndLevel = db.data.notificationRules.find(
-    (r) => r.customerId === dto.customerId && r.channel === dto.channel && r.level === dto.level
-  );
-  if (existingSameChannelAndLevel) {
-    throw new AppError('相同通道和等级的规则已存在', 400);
-  }
-
   if (dto.channel === 'webhook' && !dto.webhookUrl) {
     throw new AppError('Webhook 通道必须提供 webhookUrl', 400);
   }

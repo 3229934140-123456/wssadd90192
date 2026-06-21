@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as alertService from '../services/alertService';
-import { DeliveryStatus, NotificationLevel } from '../models';
+import { DeliveryStatus, NotificationLevel, NotificationChannel } from '../models';
 
 const router = Router();
 
@@ -40,11 +40,11 @@ router.get('/:customerId', async (req: Request, res: Response, next) => {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const deliveryStatus = req.query.deliveryStatus as DeliveryStatus | undefined;
-    const acknowledged = req.query.acknowledged !== undefined 
-      ? req.query.acknowledged === 'true' 
+    const acknowledged = req.query.acknowledged !== undefined
+      ? req.query.acknowledged === 'true'
       : undefined;
-    const falsePositive = req.query.falsePositive !== undefined 
-      ? req.query.falsePositive === 'true' 
+    const falsePositive = req.query.falsePositive !== undefined
+      ? req.query.falsePositive === 'true'
       : undefined;
     const level = req.query.level as NotificationLevel | undefined;
     const source = req.query.source as string | undefined;
@@ -74,7 +74,10 @@ router.get('/:customerId', async (req: Request, res: Response, next) => {
 
 router.get('/:customerId/:id', async (req: Request, res: Response, next) => {
   try {
-    const alert = await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
+    const alert = await alertService.getAlertOrThrowByCustomer(
+      req.params.id,
+      req.params.customerId
+    );
     res.success(alert, '获取告警详情成功');
   } catch (err) {
     next(err);
@@ -106,6 +109,20 @@ router.post('/:customerId/:id/false-positive', async (req: Request, res: Respons
     await alertService.getAlertOrThrowByCustomer(req.params.id, req.params.customerId);
     const result = await alertService.markFalsePositive(req.params.id);
     res.success(result, '已标记为误报');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:customerId/:id/retry/:channel', async (req: Request, res: Response, next) => {
+  try {
+    const { customerId, id, channel } = req.params;
+    const result = await alertService.retryAlertChannel(
+      id,
+      channel as NotificationChannel,
+      customerId
+    );
+    res.success(result, '重发成功');
   } catch (err) {
     next(err);
   }

@@ -4,7 +4,11 @@ export type WordPackageType = 'exclusive' | 'industry' | 'event';
 
 export type NotificationChannel = 'sms' | 'wechat' | 'dingtalk' | 'webhook';
 
-export type DeliveryStatus = 'pending' | 'delivered' | 'failed';
+export type DeliveryStatus = 'pending' | 'delivered' | 'failed' | 'retrying';
+
+export type AuditAction = 'create' | 'update' | 'delete';
+
+export type AuditEntityType = 'word' | 'word_package' | 'notification_rule' | 'customer';
 
 export interface Customer {
   id: string;
@@ -45,8 +49,15 @@ export interface NotificationRule {
   channel: NotificationChannel;
   level: NotificationLevel;
   enabled: boolean;
+  sourceFilters?: string[];
+  wordPackageTypes?: WordPackageType[];
+  minScore?: number;
+  maxScore?: number;
   webhookUrl?: string;
   phoneNumbers?: string[];
+  retryEnabled?: boolean;
+  maxRetryCount?: number;
+  retryIntervalMinutes?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -60,6 +71,7 @@ export interface Alert {
   sourceUrl?: string;
   sourceWeight: number;
   hitWords: string[];
+  hitWordPackageTypes: WordPackageType[];
   level: NotificationLevel;
   score: number;
   deliveryStatus: DeliveryStatus;
@@ -67,6 +79,7 @@ export interface Alert {
   falsePositive: boolean;
   channels: NotificationChannel[];
   deliveryResults: DeliveryResult[];
+  matchedRuleIds: string[];
   acknowledgedAt?: number;
   falsePositiveAt?: number;
   createdAt: number;
@@ -76,9 +89,14 @@ export interface Alert {
 export interface DeliveryResult {
   channel: NotificationChannel;
   status: DeliveryStatus;
+  ruleId?: string;
   deliveredAt?: number;
   errorMessage?: string;
   messageId?: string;
+  retryCount: number;
+  lastError?: string;
+  nextRetryAt?: number;
+  firstFailedAt?: number;
 }
 
 export interface MonitorData {
@@ -90,4 +108,37 @@ export interface MonitorData {
   sourceWeight?: number;
   publishTime?: number;
   extra?: Record<string, any>;
+}
+
+export interface AuditLog {
+  id: string;
+  customerId: string;
+  entityType: AuditEntityType;
+  entityId: string;
+  entityName?: string;
+  action: AuditAction;
+  operator: string;
+  before?: Record<string, any>;
+  after?: Record<string, any>;
+  changes?: string[];
+  timestamp: number;
+  ip?: string;
+  userAgent?: string;
+}
+
+export interface BatchImportWordItem {
+  word: string;
+  type: WordPackageType;
+  level: NotificationLevel;
+  packageName?: string;
+  packageType?: WordPackageType;
+}
+
+export interface BatchImportResult {
+  success: number;
+  failed: number;
+  skipped: number;
+  successItems: Array<{ word: string; id: string; packages?: string[] }>;
+  failedItems: Array<{ word: string; reason: string; row?: number }>;
+  skippedItems: Array<{ word: string; reason: string; row?: number }>;
 }

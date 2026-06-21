@@ -7,11 +7,13 @@ import {
   Word,
   NotificationChannel,
   DeliveryResult,
+  NotificationRule,
+  WordPackageType,
 } from '../models';
 import { generateId, now } from '../utils/common';
 import { AppError } from '../middleware/errorHandler';
 import { getWordsByCustomer } from './wordService';
-import { getActiveRulesForCustomer } from './notificationRuleService';
+import { getMatchingRules, getNotificationRule } from './notificationRuleService';
 import { sendNotification, sendCustomerDefaultWebhook } from './notificationService';
 import { getWordPackagesContainingWord } from './wordPackageService';
 import { config } from '../config';
@@ -27,25 +29,13 @@ function getHigherLevel(a: NotificationLevel, b: NotificationLevel): Notificatio
   return LEVEL_ORDER[a] >= LEVEL_ORDER[b] ? a : b;
 }
 
-export interface AlertQueryParams {
-  customerId: string;
-  deliveryStatus?: DeliveryStatus;
-  acknowledged?: boolean;
-  falsePositive?: boolean;
-  level?: NotificationLevel;
-  source?: string;
-  startTime?: number;
-  endTime?: number;
-  page?: number;
-  pageSize?: number;
-}
-
 export interface AlertMatchResult {
   hitWords: string[];
   highestLevel: NotificationLevel;
   score: number;
   matchedWords: Word[];
-  wordLevels: Record<string, { wordLevel: NotificationLevel; packageLevel: NotificationLevel | null; finalLevel: NotificationLevel }>;
+  hitWordPackageTypes: WordPackageType[];
+  wordLevels: Record<string, { wordLevel: NotificationLevel; packageLevels: NotificationLevel[]; finalLevel: NotificationLevel }>;
 }
 
 export function matchSensitiveWords(content: string, words: Word[]): { matchedWords: Word[]; hitWordStrings: string[] } {
@@ -68,27 +58,34 @@ export function matchSensitiveWords(content: string, words: Word[]): { matchedWo
 export async function calculateAlertLevelWithPackages(
   customerId: string,
   matchedWords: Word[]
-): Promise<{ highestLevel: NotificationLevel; wordLevels: AlertMatchResult['wordLevels'] }> {
+): Promise<{
+  highestLevel: NotificationLevel;
+  hitWordPackageTypes: WordPackageType[];
+  wordLevels: AlertMatchResult['wordLevels'];
+}> {
   const wordLevels: AlertMatchResult['wordLevels'] = {};
+  const packageTypeSet = new Set<WordPackageType>();
   let highestLevel: NotificationLevel = 'info';
 
   for (const word of matchedWords) {
     const packages = await getWordPackagesContainingWord(customerId, word.id);
-    
-    let packageLevel: NotificationLevel | null = null;
-    for (const wp of packages) {
-      if (packageLevel === null || LEVEL_ORDER[wp.defaultLevel] > LEVEL_ORDER[packageLevel]) {
-        packageLevel = wp.defaultLevel;
-      }
-    }
+    const packageLevels: NotificationLevel[] = packages.map((p) => p.defaultLevel);
 
-    const finalLevel = packageLevel !== null 
-      ? getHigherLevel(word.level, packageLevel)
-      : word.level;
+    let finalLevel: NotificationLevel = word.level;
+    if (packages.length > 0) {
+      let maxPackageLevel: NotificationLevel = 'info';
+      for (const p of packages) {
+        if (LEVEL_ORDER[p.defaultLevel] > LEVEL_ORDER[maxPackageLevel]) {
+          maxPackageLevel = p.defaultLevel;
+        }
+        packageTypeSet.add(p.type);
+      }
+      finalLevel = getHigherLevel(word.level, maxPackageLevel);
+    }
 
     wordLevels[word.word] = {
       wordLevel: word.level,
-      packageLevel,
+      packageLevels,
       finalLevel,
     };
 
@@ -97,12 +94,27 @@ export async function calculateAlertLevelWithPackages(
     }
   }
 
-  return { highestLevel, wordLevels };
+  return {
+    highestLevel,
+    hitWordPackageTypes: Array.from(packageTypeSet),
+    wordLevels,
+  };
 }
 
 export function calculateFinalScore(baseScore: number, sourceWeight: number): number {
   const weight = sourceWeight || config.defaultSourceWeight;
   return Math.round(baseScore * weight);
+}
+
+function createInitialDeliveryResult(
+  rule: NotificationRule
+): DeliveryResult {
+  return {
+    channel: rule.channel,
+    status: 'pending',
+    ruleId: rule.id,
+    retryCount: 0,
+  };
 }
 
 export async function processMonitorData(data: MonitorData): Promise<Alert | null> {
@@ -122,7 +134,7 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
     return null;
   }
 
-  const { highestLevel, wordLevels } = await calculateAlertLevelWithPackages(
+  const { highestLevel, hitWordPackageTypes, wordLevels } = await calculateAlertLevelWithPackages(
     data.customerId,
     matchedWords
   );
@@ -138,6 +150,15 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
   const sourceWeight = data.sourceWeight ?? config.defaultSourceWeight;
   const finalScore = calculateFinalScore(baseScoreTotal, sourceWeight);
 
+  const matchingRules = await getMatchingRules(data.customerId, {
+    level: highestLevel,
+    source: data.source,
+    score: finalScore,
+    hitWordPackageTypes,
+  });
+
+  logger.info(`[Alert] 匹配到 ${matchingRules.length} 条通知规则`);
+
   const db = getDB();
   const alert: Alert = {
     id: generateId(),
@@ -148,13 +169,15 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
     sourceUrl: data.sourceUrl,
     sourceWeight,
     hitWords: hitWordStrings,
+    hitWordPackageTypes,
     level: highestLevel,
     score: finalScore,
     deliveryStatus: 'pending',
     acknowledged: false,
     falsePositive: false,
     channels: [],
-    deliveryResults: [],
+    deliveryResults: matchingRules.map(createInitialDeliveryResult),
+    matchedRuleIds: matchingRules.map((r) => r.id),
     createdAt: now(),
     updatedAt: now(),
   };
@@ -162,15 +185,14 @@ export async function processMonitorData(data: MonitorData): Promise<Alert | nul
   db.data.alerts.push(alert);
   await saveDB();
 
-  await distributeAlert(alert);
+  await distributeAlert(alert, matchingRules);
 
   return alert;
 }
 
-async function distributeAlert(alert: Alert): Promise<void> {
-  logger.info(`[Alert] 开始分发告警 alertId=${alert.id}`);
+async function distributeAlert(alert: Alert, rules: NotificationRule[]): Promise<void> {
+  logger.info(`[Alert] 开始分发告警 alertId=${alert.id} rules=${rules.length}`);
 
-  const rules = await getActiveRulesForCustomer(alert.customerId, alert.level);
   const channels: NotificationChannel[] = [];
   const results: DeliveryResult[] = [];
 
@@ -180,6 +202,17 @@ async function distributeAlert(alert: Alert): Promise<void> {
     }
 
     const result = await sendNotification(rule.channel, rule, alert);
+    result.ruleId = rule.id;
+    result.retryCount = 0;
+
+    if (result.status === 'failed' && rule.retryEnabled !== false) {
+      result.firstFailedAt = now();
+      result.lastError = result.errorMessage;
+      const retryInterval = (rule.retryIntervalMinutes || 5) * 60 * 1000;
+      result.nextRetryAt = now() + retryInterval;
+      result.status = 'retrying';
+    }
+
     results.push(result);
   }
 
@@ -189,6 +222,7 @@ async function distributeAlert(alert: Alert): Promise<void> {
     if (defaultResult.status === 'delivered') {
       channels.push('webhook');
     }
+    defaultResult.retryCount = 0;
     results.push(defaultResult);
   }
 
@@ -211,11 +245,26 @@ function calculateOverallDeliveryStatus(results: DeliveryResult[]): DeliveryStat
   if (results.length === 0) return 'pending';
 
   const hasDelivered = results.some((r) => r.status === 'delivered');
+  const hasRetrying = results.some((r) => r.status === 'retrying');
   const allFailed = results.every((r) => r.status === 'failed');
 
   if (hasDelivered) return 'delivered';
+  if (hasRetrying) return 'retrying';
   if (allFailed) return 'failed';
   return 'pending';
+}
+
+export interface AlertQueryParams {
+  customerId: string;
+  deliveryStatus?: DeliveryStatus;
+  acknowledged?: boolean;
+  falsePositive?: boolean;
+  level?: NotificationLevel;
+  source?: string;
+  startTime?: number;
+  endTime?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 export async function listAlerts(params: AlertQueryParams): Promise<{ list: Alert[]; total: number }> {
@@ -315,6 +364,7 @@ export async function getAlertDeliveryStatus(id: string): Promise<{
   acknowledgedAt?: number;
   falsePositive: boolean;
   falsePositiveAt?: number;
+  matchedRuleIds: string[];
   deliveries: DeliveryResult[];
 }> {
   const alert = await getAlertOrThrow(id);
@@ -326,8 +376,132 @@ export async function getAlertDeliveryStatus(id: string): Promise<{
     acknowledgedAt: alert.acknowledgedAt,
     falsePositive: alert.falsePositive,
     falsePositiveAt: alert.falsePositiveAt,
+    matchedRuleIds: alert.matchedRuleIds,
     deliveries: alert.deliveryResults,
   };
+}
+
+export async function retryAlertChannel(
+  alertId: string,
+  channel: NotificationChannel,
+  customerId: string
+): Promise<DeliveryResult> {
+  const alert = await getAlertOrThrowByCustomer(alertId, customerId);
+  const db = getDB();
+
+  const deliveryIdx = alert.deliveryResults.findIndex((d) => d.channel === channel);
+  if (deliveryIdx === -1) {
+    throw new AppError(`该告警没有 ${channel} 通道的投递记录`, 400);
+  }
+
+  const delivery = alert.deliveryResults[deliveryIdx];
+  const rule = delivery.ruleId ? await getNotificationRule(delivery.ruleId) : null;
+
+  if (!rule) {
+    throw new AppError('对应的通知规则不存在', 400);
+  }
+
+  logger.info(`[Alert] 手动重发告警 alertId=${alertId} channel=${channel}`);
+
+  const result = await sendNotification(channel, rule, alert);
+  result.ruleId = rule.id;
+  result.retryCount = (delivery.retryCount || 0) + 1;
+  result.lastError = result.errorMessage;
+
+  if (result.status === 'failed' && rule.retryEnabled !== false) {
+    if (!delivery.firstFailedAt) {
+      result.firstFailedAt = now();
+    } else {
+      result.firstFailedAt = delivery.firstFailedAt;
+    }
+    const maxRetry = rule.maxRetryCount || 3;
+    if (result.retryCount < maxRetry) {
+      const retryInterval = (rule.retryIntervalMinutes || 5) * 60 * 1000;
+      result.nextRetryAt = now() + retryInterval;
+      result.status = 'retrying';
+    }
+  }
+
+  alert.deliveryResults[deliveryIdx] = result;
+  alert.deliveryStatus = calculateOverallDeliveryStatus(alert.deliveryResults);
+  alert.updatedAt = now();
+
+  await saveDB();
+  return result;
+}
+
+export async function getRetryableAlerts(): Promise<Array<{ alert: Alert; delivery: DeliveryResult; rule: NotificationRule | null }>> {
+  const db = getDB();
+  const currentTs = now();
+  const retryable: Array<{ alert: Alert; delivery: DeliveryResult; rule: NotificationRule | null }> = [];
+
+  for (const alert of db.data.alerts) {
+    for (const delivery of alert.deliveryResults) {
+      if (
+        delivery.status === 'retrying' &&
+        delivery.nextRetryAt &&
+        delivery.nextRetryAt <= currentTs
+      ) {
+        const rule = delivery.ruleId
+          ? db.data.notificationRules.find((r) => r.id === delivery.ruleId) || null
+          : null;
+        retryable.push({ alert, delivery, rule });
+      }
+    }
+  }
+
+  return retryable;
+}
+
+export async function processRetryQueue(): Promise<number> {
+  logger.info('[Alert] 开始处理重试队列');
+  const retryable = await getRetryableAlerts();
+  let processed = 0;
+
+  for (const item of retryable) {
+    try {
+      if (!item.rule) continue;
+
+      const result = await sendNotification(item.delivery.channel, item.rule, item.alert);
+      result.ruleId = item.delivery.ruleId;
+      result.retryCount = (item.delivery.retryCount || 0) + 1;
+      result.lastError = result.errorMessage;
+      result.firstFailedAt = item.delivery.firstFailedAt;
+
+      if (result.status === 'failed') {
+        const maxRetry = item.rule.maxRetryCount || 3;
+        if (result.retryCount < maxRetry) {
+          const retryInterval = (item.rule.retryIntervalMinutes || 5) * 60 * 1000;
+          result.nextRetryAt = now() + retryInterval;
+          result.status = 'retrying';
+        }
+      }
+
+      const db = getDB();
+      const alertInDB = db.data.alerts.find((a) => a.id === item.alert.id);
+      if (alertInDB) {
+        const idx = alertInDB.deliveryResults.findIndex(
+          (d) => d.channel === item.delivery.channel
+        );
+        if (idx !== -1) {
+          alertInDB.deliveryResults[idx] = result;
+          alertInDB.deliveryStatus = calculateOverallDeliveryStatus(alertInDB.deliveryResults);
+          alertInDB.updatedAt = now();
+        }
+      }
+
+      await saveDB();
+      processed++;
+      logger.info(
+        `[Alert] 重试完成 alertId=${item.alert.id} channel=${item.delivery.channel} status=${result.status}`
+      );
+    } catch (err: any) {
+      logger.error(`[Alert] 重试失败 alertId=${item.alert.id}`, { error: err.message });
+    }
+  }
+
+  logger.info(`[Alert] 重试队列处理完成，共处理 ${processed} 条`);
+  return processed;
 }
 
 export async function getAlertStatistics(customerId: string, days: number = 7): Promise<{
@@ -355,6 +529,7 @@ export async function getAlertStatistics(customerId: string, days: number = 7): 
     pending: 0,
     delivered: 0,
     failed: 0,
+    retrying: 0,
   };
   const byAcknowledged = { acknowledged: 0, unacknowledged: 0 };
   const byFalsePositive = { falsePositive: 0, valid: 0 };

@@ -3,6 +3,7 @@ import { Word, WordPackageType, NotificationLevel } from '../models';
 import { generateId, now } from '../utils/common';
 import { AppError } from '../middleware/errorHandler';
 import { getCustomerOrThrow } from './customerService';
+import { createAuditLog, diffObject } from './auditService';
 
 export interface CreateWordDTO {
   word: string;
@@ -73,7 +74,11 @@ export async function getWordOrThrowByCustomer(id: string, customerId: string): 
   return word;
 }
 
-export async function createWord(dto: CreateWordDTO): Promise<Word> {
+export async function createWord(
+  dto: CreateWordDTO,
+  operator: string = 'system',
+  ip?: string
+): Promise<Word> {
   await getCustomerOrThrow(dto.customerId);
   const db = getDB();
 
@@ -96,12 +101,25 @@ export async function createWord(dto: CreateWordDTO): Promise<Word> {
 
   db.data.words.push(word);
   await saveDB();
+
+  await createAuditLog({
+    customerId: dto.customerId,
+    entityType: 'word',
+    entityId: word.id,
+    entityName: word.word,
+    action: 'create',
+    operator,
+    after: { ...word },
+    ip,
+  });
+
   return word;
 }
 
 export async function batchCreateWords(
   customerId: string,
-  words: Array<{ word: string; type: WordPackageType; level: NotificationLevel }>
+  words: Array<{ word: string; type: WordPackageType; level: NotificationLevel }>,
+  operator: string = 'system'
 ): Promise<Word[]> {
   await getCustomerOrThrow(customerId);
   const db = getDB();
@@ -125,14 +143,30 @@ export async function batchCreateWords(
     };
     db.data.words.push(word);
     created.push(word);
+
+    await createAuditLog({
+      customerId,
+      entityType: 'word',
+      entityId: word.id,
+      entityName: word.word,
+      action: 'create',
+      operator: operator + '(batch)',
+      after: { ...word },
+    });
   }
 
   await saveDB();
   return created;
 }
 
-export async function updateWord(id: string, dto: UpdateWordDTO): Promise<Word> {
+export async function updateWord(
+  id: string,
+  dto: UpdateWordDTO,
+  operator: string = 'system',
+  ip?: string
+): Promise<Word> {
   const word = await getWordOrThrow(id);
+  const before = { ...word };
   const db = getDB();
 
   if (dto.word && (dto.word !== word.word || dto.type)) {
@@ -151,11 +185,34 @@ export async function updateWord(id: string, dto: UpdateWordDTO): Promise<Word> 
 
   Object.assign(word, dto, { updatedAt: now() });
   await saveDB();
+
+  const changes = diffObject(before, { ...word });
+
+  await createAuditLog({
+    customerId: word.customerId,
+    entityType: 'word',
+    entityId: word.id,
+    entityName: word.word,
+    action: 'update',
+    operator,
+    before,
+    after: { ...word },
+    changes,
+    ip,
+  });
+
   return word;
 }
 
-export async function deleteWord(id: string): Promise<void> {
+export async function deleteWord(
+  id: string,
+  operator: string = 'system',
+  ip?: string
+): Promise<void> {
   const db = getDB();
+  const word = await getWordOrThrow(id);
+  const before = { ...word };
+
   const index = db.data.words.findIndex((w) => w.id === id);
   if (index === -1) {
     throw new AppError('敏感词不存在', 404);
@@ -171,9 +228,25 @@ export async function deleteWord(id: string): Promise<void> {
   }
 
   await saveDB();
+
+  await createAuditLog({
+    customerId: word.customerId,
+    entityType: 'word',
+    entityId: word.id,
+    entityName: word.word,
+    action: 'delete',
+    operator,
+    before,
+    ip,
+  });
 }
 
 export async function getWordsByCustomer(customerId: string): Promise<Word[]> {
   const db = getDB();
   return db.data.words.filter((w) => w.customerId === customerId);
+}
+
+export async function getWordsByIds(customerId: string, wordIds: string[]): Promise<Word[]> {
+  const db = getDB();
+  return db.data.words.filter((w) => w.customerId === customerId && wordIds.includes(w.id));
 }

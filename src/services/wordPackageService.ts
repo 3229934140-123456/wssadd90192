@@ -1,8 +1,10 @@
 import { getDB, saveDB } from '../database';
-import { WordPackage, WordPackageType, NotificationLevel } from '../models';
+import { WordPackage, WordPackageType, NotificationLevel, Word, BatchImportResult, BatchImportWordItem } from '../models';
 import { generateId, now } from '../utils/common';
 import { AppError } from '../middleware/errorHandler';
 import { getCustomerOrThrow } from './customerService';
+import { getWordsByIds, createWord } from './wordService';
+import { createAuditLog, diffObject } from './auditService';
 
 export interface CreateWordPackageDTO {
   name: string;
@@ -53,7 +55,31 @@ export async function getWordPackageOrThrowByCustomer(id: string, customerId: st
   return wp;
 }
 
-export async function createWordPackage(dto: CreateWordPackageDTO): Promise<WordPackage> {
+export async function getWordPackagesContainingWord(
+  customerId: string,
+  wordId: string
+): Promise<WordPackage[]> {
+  const db = getDB();
+  return db.data.wordPackages.filter(
+    (wp) => wp.customerId === customerId && wp.wordIds.includes(wordId)
+  );
+}
+
+export async function getWordPackagesByIds(
+  customerId: string,
+  packageIds: string[]
+): Promise<WordPackage[]> {
+  const db = getDB();
+  return db.data.wordPackages.filter(
+    (wp) => wp.customerId === customerId && packageIds.includes(wp.id)
+  );
+}
+
+export async function createWordPackage(
+  dto: CreateWordPackageDTO,
+  operator: string = 'system',
+  ip?: string
+): Promise<WordPackage> {
   await getCustomerOrThrow(dto.customerId);
   const db = getDB();
 
@@ -62,6 +88,13 @@ export async function createWordPackage(dto: CreateWordPackageDTO): Promise<Word
   );
   if (exists) {
     throw new AppError('该类型下已存在同名词包', 400);
+  }
+
+  if (dto.wordIds && dto.wordIds.length > 0) {
+    const words = await getWordsByIds(dto.customerId, dto.wordIds);
+    if (words.length !== dto.wordIds.length) {
+      throw new AppError('部分敏感词不存在或不属于当前客户', 400);
+    }
   }
 
   const wp: WordPackage = {
@@ -78,14 +111,29 @@ export async function createWordPackage(dto: CreateWordPackageDTO): Promise<Word
 
   db.data.wordPackages.push(wp);
   await saveDB();
+
+  await createAuditLog({
+    customerId: dto.customerId,
+    entityType: 'word_package',
+    entityId: wp.id,
+    entityName: wp.name,
+    action: 'create',
+    operator,
+    after: { ...wp },
+    ip,
+  });
+
   return wp;
 }
 
 export async function updateWordPackage(
   id: string,
-  dto: UpdateWordPackageDTO
+  dto: UpdateWordPackageDTO,
+  operator: string = 'system',
+  ip?: string
 ): Promise<WordPackage> {
   const wp = await getWordPackageOrThrow(id);
+  const before = { ...wp };
   const db = getDB();
 
   if (dto.name && dto.name !== wp.name) {
@@ -99,28 +147,69 @@ export async function updateWordPackage(
 
   Object.assign(wp, dto, { updatedAt: now() });
   await saveDB();
+
+  const changes = diffObject(before, { ...wp });
+
+  await createAuditLog({
+    customerId: wp.customerId,
+    entityType: 'word_package',
+    entityId: wp.id,
+    entityName: wp.name,
+    action: 'update',
+    operator,
+    before,
+    after: { ...wp },
+    changes,
+    ip,
+  });
+
   return wp;
 }
 
-export async function deleteWordPackage(id: string): Promise<void> {
+export async function deleteWordPackage(
+  id: string,
+  operator: string = 'system',
+  ip?: string
+): Promise<void> {
   const db = getDB();
+  const wp = await getWordPackageOrThrow(id);
+  const before = { ...wp };
+
   const index = db.data.wordPackages.findIndex((wp) => wp.id === id);
   if (index === -1) {
     throw new AppError('词包不存在', 404);
   }
   db.data.wordPackages.splice(index, 1);
   await saveDB();
+
+  await createAuditLog({
+    customerId: wp.customerId,
+    entityType: 'word_package',
+    entityId: wp.id,
+    entityName: wp.name,
+    action: 'delete',
+    operator,
+    before,
+    ip,
+  });
 }
 
-export async function addWordsToPackage(packageId: string, wordIds: string[]): Promise<WordPackage> {
+export async function addWordsToPackage(
+  packageId: string,
+  wordIds: string[],
+  operator: string = 'system',
+  ip?: string
+): Promise<WordPackage> {
   const wp = await getWordPackageOrThrow(packageId);
+  const before = { ...wp };
   const db = getDB();
 
+  const words = await getWordsByIds(wp.customerId, wordIds);
+  if (words.length !== wordIds.length) {
+    throw new AppError('部分敏感词不存在或不属于当前客户', 400);
+  }
+
   for (const wordId of wordIds) {
-    const word = db.data.words.find((w) => w.id === wordId && w.customerId === wp.customerId);
-    if (!word) {
-      throw new AppError(`敏感词 ${wordId} 不存在`, 400);
-    }
     if (!wp.wordIds.includes(wordId)) {
       wp.wordIds.push(wordId);
     }
@@ -128,26 +217,210 @@ export async function addWordsToPackage(packageId: string, wordIds: string[]): P
 
   wp.updatedAt = now();
   await saveDB();
+
+  const changes = diffObject(before, { ...wp });
+
+  await createAuditLog({
+    customerId: wp.customerId,
+    entityType: 'word_package',
+    entityId: wp.id,
+    entityName: wp.name,
+    action: 'update',
+    operator,
+    before,
+    after: { ...wp },
+    changes: ['wordIds(added)', ...changes],
+    ip,
+  });
+
   return wp;
 }
 
 export async function removeWordsFromPackage(
   packageId: string,
-  wordIds: string[]
+  wordIds: string[],
+  operator: string = 'system',
+  ip?: string
 ): Promise<WordPackage> {
   const wp = await getWordPackageOrThrow(packageId);
+  const before = { ...wp };
+
   wp.wordIds = wp.wordIds.filter((id) => !wordIds.includes(id));
   wp.updatedAt = now();
   await saveDB();
+
+  const changes = diffObject(before, { ...wp });
+
+  await createAuditLog({
+    customerId: wp.customerId,
+    entityType: 'word_package',
+    entityId: wp.id,
+    entityName: wp.name,
+    action: 'update',
+    operator,
+    before,
+    after: { ...wp },
+    changes: ['wordIds(removed)', ...changes],
+    ip,
+  });
+
   return wp;
 }
 
-export async function getWordPackagesContainingWord(
-  customerId: string,
-  wordId: string
-): Promise<WordPackage[]> {
+export async function getPackageWords(packageId: string): Promise<Word[]> {
+  const wp = await getWordPackageOrThrow(packageId);
   const db = getDB();
-  return db.data.wordPackages.filter(
-    (wp) => wp.customerId === customerId && wp.wordIds.includes(wordId)
-  );
+  return db.data.words.filter((w) => wp.wordIds.includes(w.id));
+}
+
+export async function batchImportWords(
+  customerId: string,
+  items: BatchImportWordItem[],
+  operator: string = 'system'
+): Promise<BatchImportResult> {
+  await getCustomerOrThrow(customerId);
+  const db = getDB();
+
+  const result: BatchImportResult = {
+    success: 0,
+    failed: 0,
+    skipped: 0,
+    successItems: [],
+    failedItems: [],
+    skippedItems: [],
+  };
+
+  const packageCache: Record<string, WordPackage> = {};
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const row = i + 1;
+
+    try {
+      if (!item.word || !item.word.trim()) {
+        result.failed++;
+        result.failedItems.push({ word: item.word || '(空)', reason: '词不能为空', row });
+        continue;
+      }
+      if (!item.type) {
+        result.failed++;
+        result.failedItems.push({ word: item.word, reason: '类型不能为空', row });
+        continue;
+      }
+      if (!item.level) {
+        result.failed++;
+        result.failedItems.push({ word: item.word, reason: '等级不能为空', row });
+        continue;
+      }
+
+      const existingWord = db.data.words.find(
+        (w) => w.customerId === customerId && w.word === item.word && w.type === item.type
+      );
+
+      if (existingWord) {
+        result.skipped++;
+        result.skippedItems.push({ word: item.word, reason: '已存在相同词', row });
+        continue;
+      }
+
+      const createdWord = await createWord(
+        {
+          word: item.word,
+          type: item.type,
+          level: item.level,
+          customerId,
+        },
+        operator + '(import)'
+      );
+
+      const packages: string[] = [];
+
+      if (item.packageName) {
+        const packageType = item.packageType || item.type;
+        const cacheKey = `${packageType}-${item.packageName}`;
+        let wordPackage = packageCache[cacheKey];
+
+        if (!wordPackage) {
+          wordPackage = db.data.wordPackages.find(
+            (wp) =>
+              wp.customerId === customerId &&
+              wp.name === item.packageName &&
+              wp.type === packageType
+          );
+
+          if (!wordPackage) {
+            const newPackage: WordPackage = {
+              id: generateId(),
+              name: item.packageName,
+              type: packageType,
+              customerId,
+              defaultLevel: item.level,
+              wordIds: [],
+              createdAt: now(),
+              updatedAt: now(),
+            };
+            db.data.wordPackages.push(newPackage);
+            wordPackage = newPackage;
+            packageCache[cacheKey] = newPackage;
+
+            await createAuditLog({
+              customerId,
+              entityType: 'word_package',
+              entityId: newPackage.id,
+              entityName: newPackage.name,
+              action: 'create',
+              operator: operator + '(import)',
+              after: { ...newPackage },
+            });
+          }
+        }
+
+        if (!wordPackage.wordIds.includes(createdWord.id)) {
+          wordPackage.wordIds.push(createdWord.id);
+          wordPackage.updatedAt = now();
+        }
+
+        packages.push(wordPackage.name);
+      }
+
+      result.success++;
+      result.successItems.push({
+        word: item.word,
+        id: createdWord.id,
+        packages: packages.length > 0 ? packages : undefined,
+      });
+    } catch (err: any) {
+      result.failed++;
+      result.failedItems.push({
+        word: item.word,
+        reason: err.message || '未知错误',
+        row,
+      });
+    }
+  }
+
+  await saveDB();
+  return result;
+}
+
+export async function exportWordsWithPackages(
+  customerId: string
+): Promise<Array<{ word: string; type: WordPackageType; level: NotificationLevel; packages: Array<{ name: string; type: WordPackageType; defaultLevel: NotificationLevel }> }>> {
+  const db = getDB();
+  const words = db.data.words.filter((w) => w.customerId === customerId);
+  const packages = db.data.wordPackages.filter((wp) => wp.customerId === customerId);
+
+  return words.map((word) => {
+    const wordPackages = packages.filter((wp) => wp.wordIds.includes(word.id));
+    return {
+      word: word.word,
+      type: word.type,
+      level: word.level,
+      packages: wordPackages.map((wp) => ({
+        name: wp.name,
+        type: wp.type,
+        defaultLevel: wp.defaultLevel,
+      })),
+    };
+  });
 }

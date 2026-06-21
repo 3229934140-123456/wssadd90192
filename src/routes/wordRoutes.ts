@@ -28,7 +28,10 @@ router.get('/:customerId/words', async (req: Request, res: Response, next) => {
 
 router.get('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
-    const word = await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
+    const word = await wordService.getWordOrThrowByCustomer(
+      req.params.id,
+      req.params.customerId
+    );
     res.success(word, '获取敏感词成功');
   } catch (err) {
     next(err);
@@ -42,12 +45,20 @@ router.post('/:customerId/words', async (req: Request, res: Response, next) => {
     if (!word || !type || !level) {
       return res.fail('敏感词、类型和等级不能为空');
     }
-    const result = await wordService.createWord({
-      word,
-      type,
-      level,
-      customerId,
-    });
+
+    const operator = (req.headers['x-operator'] as string) || 'system';
+    const ip = req.ip;
+
+    const result = await wordService.createWord(
+      {
+        word,
+        type,
+        level,
+        customerId,
+      },
+      operator,
+      ip
+    );
     res.success(result, '创建敏感词成功');
   } catch (err) {
     next(err);
@@ -61,7 +72,10 @@ router.post('/:customerId/words/batch', async (req: Request, res: Response, next
     if (!Array.isArray(words) || words.length === 0) {
       return res.fail('批量词列表不能为空');
     }
-    const result = await wordService.batchCreateWords(customerId, words);
+
+    const operator = (req.headers['x-operator'] as string) || 'system';
+
+    const result = await wordService.batchCreateWords(customerId, words, operator);
     res.success(result, `批量创建 ${result.length} 个敏感词成功`);
   } catch (err) {
     next(err);
@@ -71,7 +85,11 @@ router.post('/:customerId/words/batch', async (req: Request, res: Response, next
 router.put('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
     await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
-    const word = await wordService.updateWord(req.params.id, req.body);
+
+    const operator = (req.headers['x-operator'] as string) || 'system';
+    const ip = req.ip;
+
+    const word = await wordService.updateWord(req.params.id, req.body, operator, ip);
     res.success(word, '更新敏感词成功');
   } catch (err) {
     next(err);
@@ -81,7 +99,11 @@ router.put('/:customerId/words/:id', async (req: Request, res: Response, next) =
 router.delete('/:customerId/words/:id', async (req: Request, res: Response, next) => {
   try {
     await wordService.getWordOrThrowByCustomer(req.params.id, req.params.customerId);
-    await wordService.deleteWord(req.params.id);
+
+    const operator = (req.headers['x-operator'] as string) || 'system';
+    const ip = req.ip;
+
+    await wordService.deleteWord(req.params.id, operator, ip);
     res.success(null, '删除敏感词成功');
   } catch (err) {
     next(err);

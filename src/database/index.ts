@@ -3,7 +3,7 @@ import { JSONFile } from 'lowdb/node';
 import fs from 'fs';
 import path from 'path';
 import { config } from '../config';
-import { Customer, Word, WordPackage, NotificationRule, Alert } from '../models';
+import { Customer, Word, WordPackage, NotificationRule, Alert, AuditLog } from '../models';
 
 interface DatabaseSchema {
   customers: Customer[];
@@ -11,6 +11,7 @@ interface DatabaseSchema {
   wordPackages: WordPackage[];
   notificationRules: NotificationRule[];
   alerts: Alert[];
+  auditLogs: AuditLog[];
 }
 
 const defaultData: DatabaseSchema = {
@@ -19,6 +20,7 @@ const defaultData: DatabaseSchema = {
   wordPackages: [],
   notificationRules: [],
   alerts: [],
+  auditLogs: [],
 };
 
 let db: Low<DatabaseSchema> | null = null;
@@ -34,10 +36,17 @@ export async function initDB(): Promise<Low<DatabaseSchema>> {
   await db.read();
 
   if (!db.data) {
-    db.data = defaultData;
-    await db.write();
+    db.data = { ...defaultData };
+  } else {
+    db.data.customers = db.data.customers || [];
+    db.data.words = db.data.words || [];
+    db.data.wordPackages = db.data.wordPackages || [];
+    db.data.notificationRules = db.data.notificationRules || [];
+    db.data.alerts = db.data.alerts || [];
+    db.data.auditLogs = db.data.auditLogs || [];
   }
 
+  await db.write();
   return db;
 }
 

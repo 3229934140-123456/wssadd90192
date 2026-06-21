@@ -6,6 +6,7 @@ import wordRoutes from './routes/wordRoutes';
 import wordPackageRoutes from './routes/wordPackageRoutes';
 import notificationRuleRoutes from './routes/notificationRuleRoutes';
 import alertRoutes from './routes/alertRoutes';
+import auditRoutes from './routes/auditRoutes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/customers', wordRoutes);
 app.use('/api/customers', wordPackageRoutes);
 app.use('/api/customers', notificationRuleRoutes);
+app.use('/api/customers', auditRoutes);
 app.use('/api/alerts', alertRoutes);
 
 app.use(notFoundHandler);

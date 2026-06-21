@@ -1,138 +1,645 @@
 {
   "customers": [
     {
-      "id": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "name": "客户A-舆情科技",
-      "contact": "张经理",
+      "id": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "name": "增强测试客户",
+      "contact": "王运营",
       "phone": "13800138000",
-      "email": "zhang@example.com",
-      "webhookUrl": "https://example.com/webhook/alert",
-      "createdAt": 1782059160728,
-      "updatedAt": 1782059160728
+      "email": "wang@example.com",
+      "createdAt": 1782060552504,
+      "updatedAt": 1782060552504
     },
     {
-      "id": "bc4666d4-841b-4842-a44c-599c1dfc9f2a",
-      "name": "客户B-数据公司",
+      "id": "de8cc636-154d-4adc-98b8-b58e90e213b5",
+      "name": "客户B",
       "contact": "李总",
-      "phone": "13900139000",
-      "createdAt": 1782059160734,
-      "updatedAt": 1782059160734
+      "createdAt": 1782060558180,
+      "updatedAt": 1782060558180
     }
   ],
   "words": [
     {
-      "id": "dcfb76c9-33a4-4927-b59a-71589a24e7cb",
-      "word": "质量问题",
+      "id": "46b9998f-c704-40f6-a625-bf3906f4b5cb",
+      "word": "质量缺陷",
       "type": "exclusive",
       "level": "warning",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "createdAt": 1782059160739,
-      "updatedAt": 1782059160739
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "createdAt": 1782060552511,
+      "updatedAt": 1782060552511
     },
     {
-      "id": "d1e99b1b-1d64-413c-8b5e-89aaef161f5a",
-      "word": "负面评价",
-      "type": "exclusive",
-      "level": "info",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "createdAt": 1782059160739,
-      "updatedAt": 1782059160739
-    },
-    {
-      "id": "c46827ab-520e-4547-aa0e-1cec11ef248c",
+      "id": "ef8f71fc-5d47-42b5-a0b8-89beec1a4863",
       "word": "用户投诉",
       "type": "exclusive",
       "level": "info",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "createdAt": 1782059160739,
-      "updatedAt": 1782059160739
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "createdAt": 1782060558143,
+      "updatedAt": 1782060558143
+    },
+    {
+      "id": "1a327859-20ab-494f-9677-e2f5cd05fb63",
+      "word": "售后服务差",
+      "type": "exclusive",
+      "level": "warning",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "createdAt": 1782060558146,
+      "updatedAt": 1782060558146
+    },
+    {
+      "id": "06b56dc2-009d-49d5-a1c1-989d8ab26566",
+      "word": "行业黑幕",
+      "type": "industry",
+      "level": "critical",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "createdAt": 1782060558147,
+      "updatedAt": 1782060558147
+    },
+    {
+      "id": "5271806b-447b-47fe-a927-5d2ffa1e9474",
+      "word": "产品召回",
+      "type": "event",
+      "level": "critical",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "createdAt": 1782060558149,
+      "updatedAt": 1782060558149
+    },
+    {
+      "id": "e422a2d2-1686-4253-b4fc-26d065680cd1",
+      "word": "客户B专属词",
+      "type": "exclusive",
+      "level": "info",
+      "customerId": "de8cc636-154d-4adc-98b8-b58e90e213b5",
+      "createdAt": 1782060558183,
+      "updatedAt": 1782060558183
     }
   ],
   "wordPackages": [
     {
-      "id": "76c84315-e798-4ace-900e-c4ac6ef6c000",
-      "name": "客户A专属词包",
+      "id": "110c1657-cf43-492a-a11f-8f1896be52dd",
+      "name": "产品质量词包",
       "type": "exclusive",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "description": "客户A的专属敏感词包",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "description": "产品质量相关敏感词",
       "wordIds": [
-        "dcfb76c9-33a4-4927-b59a-71589a24e7cb"
+        "46b9998f-c704-40f6-a625-bf3906f4b5cb"
       ],
-      "defaultLevel": "warning",
-      "createdAt": 1782059160744,
-      "updatedAt": 1782059161286
+      "defaultLevel": "info",
+      "createdAt": 1782060552517,
+      "updatedAt": 1782060558168
+    },
+    {
+      "id": "99e0cc3d-6068-4fb9-809d-ea57be25b9ff",
+      "name": "用户反馈词包",
+      "type": "exclusive",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "defaultLevel": "info",
+      "wordIds": [
+        "ef8f71fc-5d47-42b5-a0b8-89beec1a4863",
+        "1a327859-20ab-494f-9677-e2f5cd05fb63"
+      ],
+      "createdAt": 1782060558145,
+      "updatedAt": 1782060558147
+    },
+    {
+      "id": "99c98687-0203-413b-ad93-acc842b9fd5c",
+      "name": "行业风险词包",
+      "type": "industry",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "defaultLevel": "critical",
+      "wordIds": [
+        "06b56dc2-009d-49d5-a1c1-989d8ab26566"
+      ],
+      "createdAt": 1782060558148,
+      "updatedAt": 1782060558149
+    },
+    {
+      "id": "2ad405d4-4770-4a93-93e0-1759e617f336",
+      "name": "315专项词包",
+      "type": "event",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "defaultLevel": "critical",
+      "wordIds": [
+        "5271806b-447b-47fe-a927-5d2ffa1e9474"
+      ],
+      "createdAt": 1782060558151,
+      "updatedAt": 1782060558152
     }
   ],
   "notificationRules": [
     {
-      "id": "01a1a9b8-b084-4dbf-b061-5dc35e137906",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
+      "id": "f0ec5af9-de1a-4391-b283-9b9a2685dc52",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
       "channel": "wechat",
       "level": "info",
       "enabled": true,
-      "webhookUrl": "https://invalid-webhook-url.example.com/this-will-fail",
-      "createdAt": 1782059160753,
-      "updatedAt": 1782059160753
+      "sourceFilters": [
+        "新浪微博"
+      ],
+      "wordPackageTypes": [
+        "exclusive"
+      ],
+      "webhookUrl": "https://invalid-url.example.com/test",
+      "retryEnabled": true,
+      "maxRetryCount": 3,
+      "retryIntervalMinutes": 5,
+      "createdAt": 1782060552523,
+      "updatedAt": 1782060552523
     }
   ],
   "alerts": [
     {
-      "id": "c25e52f0-3faf-42bf-b0d5-654d34e3e9ee",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "title": "某平台出现大量质量问题投诉",
-      "content": "近期有多位用户反馈产品存在严重的质量问题，包括外观瑕疵、功能故障等。",
-      "source": "新浪微博",
+      "id": "29bc6e03-2c6f-4a5d-9283-8a166a9aca3a",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "title": "知乎上的质量缺陷讨论",
+      "content": "有用户在知乎上讨论产品的质量缺陷问题。",
+      "source": "知乎",
       "sourceWeight": 1,
       "hitWords": [
-        "质量问题"
+        "质量缺陷"
+      ],
+      "hitWordPackageTypes": [
+        "exclusive"
       ],
       "level": "critical",
       "score": 70,
-      "deliveryStatus": "failed",
-      "acknowledged": true,
+      "deliveryStatus": "delivered",
+      "acknowledged": false,
       "falsePositive": false,
       "channels": [
-        "wechat"
+        "sms"
+      ],
+      "deliveryResults": [
+        {
+          "channel": "sms",
+          "status": "delivered",
+          "deliveredAt": 1782060552537,
+          "messageId": "sms_29bc6e03-2c6f-4a5d-9283-8a166a9aca3a_1782060552537",
+          "ruleId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+          "retryCount": 0
+        }
+      ],
+      "matchedRuleIds": [
+        "61492cad-8776-474f-882d-fd09aa4d8e61"
+      ],
+      "createdAt": 1782060552536,
+      "updatedAt": 1782060552538
+    },
+    {
+      "id": "c9194c04-2b1d-4cc4-a4c1-66b43e95edac",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "title": "新浪微博出现大量质量缺陷投诉",
+      "content": "近期有大量用户在新浪微博反馈产品存在严重的质量缺陷，事件持续发酵。",
+      "source": "新浪微博",
+      "sourceWeight": 2,
+      "hitWords": [
+        "质量缺陷"
+      ],
+      "hitWordPackageTypes": [
+        "exclusive"
+      ],
+      "level": "critical",
+      "score": 140,
+      "deliveryStatus": "delivered",
+      "acknowledged": false,
+      "falsePositive": false,
+      "channels": [
+        "wechat",
+        "sms"
       ],
       "deliveryResults": [
         {
           "channel": "wechat",
-          "status": "failed",
-          "errorMessage": "Client network socket disconnected before secure TLS connection was established"
+          "status": "retrying",
+          "errorMessage": "Client network socket disconnected before secure TLS connection was established",
+          "ruleId": "f0ec5af9-de1a-4391-b283-9b9a2685dc52",
+          "retryCount": 1,
+          "lastError": "Client network socket disconnected before secure TLS connection was established",
+          "firstFailedAt": 1782060557596,
+          "nextRetryAt": 1782060858137
+        },
+        {
+          "channel": "sms",
+          "status": "delivered",
+          "deliveredAt": 1782060557596,
+          "messageId": "sms_c9194c04-2b1d-4cc4-a4c1-66b43e95edac_1782060557596",
+          "ruleId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+          "retryCount": 0
         }
       ],
-      "createdAt": 1782059160757,
-      "updatedAt": 1782059161667,
-      "acknowledgedAt": 1782059161667
+      "matchedRuleIds": [
+        "f0ec5af9-de1a-4391-b283-9b9a2685dc52",
+        "61492cad-8776-474f-882d-fd09aa4d8e61"
+      ],
+      "createdAt": 1782060552543,
+      "updatedAt": 1782060558137
     },
     {
-      "id": "b17b18de-0915-440d-b3c0-072f83e3a000",
-      "customerId": "7ff4ef28-883c-4560-9698-56dd6cef9fbb",
-      "title": "又一起质量问题曝光",
-      "content": "媒体报道了新的质量问题，涉及多个批次的产品。",
-      "source": "腾讯新闻",
-      "sourceWeight": 1.2,
+      "id": "6bf39c8d-6d65-414c-8c92-cb620f479a24",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "title": "又一起质量缺陷事件",
+      "content": "产品又出现了质量缺陷，用户很不满。",
+      "source": "微信公众号",
+      "sourceWeight": 1,
       "hitWords": [
-        "质量问题"
+        "质量缺陷"
+      ],
+      "hitWordPackageTypes": [
+        "exclusive"
+      ],
+      "level": "critical",
+      "score": 70,
+      "deliveryStatus": "delivered",
+      "acknowledged": false,
+      "falsePositive": false,
+      "channels": [
+        "sms"
+      ],
+      "deliveryResults": [
+        {
+          "channel": "sms",
+          "status": "delivered",
+          "deliveredAt": 1782060558163,
+          "messageId": "sms_6bf39c8d-6d65-414c-8c92-cb620f479a24_1782060558163",
+          "ruleId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+          "retryCount": 0
+        }
+      ],
+      "matchedRuleIds": [
+        "61492cad-8776-474f-882d-fd09aa4d8e61"
+      ],
+      "createdAt": 1782060558161,
+      "updatedAt": 1782060558163
+    },
+    {
+      "id": "f79864d5-c091-4cd9-b0b8-f1b741df6178",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "title": "新的质量缺陷投诉",
+      "content": "又有用户投诉质量缺陷问题。",
+      "source": "小红书",
+      "sourceWeight": 1,
+      "hitWords": [
+        "质量缺陷",
+        "用户投诉"
+      ],
+      "hitWordPackageTypes": [
+        "exclusive"
       ],
       "level": "warning",
       "score": 60,
-      "deliveryStatus": "failed",
+      "deliveryStatus": "delivered",
       "acknowledged": false,
-      "falsePositive": true,
+      "falsePositive": false,
       "channels": [
-        "wechat"
+        "sms"
       ],
       "deliveryResults": [
         {
-          "channel": "wechat",
-          "status": "failed",
-          "errorMessage": "Client network socket disconnected before secure TLS connection was established"
+          "channel": "sms",
+          "status": "delivered",
+          "deliveredAt": 1782060558176,
+          "messageId": "sms_f79864d5-c091-4cd9-b0b8-f1b741df6178_1782060558176",
+          "ruleId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+          "retryCount": 0
         }
       ],
-      "createdAt": 1782059161290,
-      "updatedAt": 1782059161702,
-      "falsePositiveAt": 1782059161702
+      "matchedRuleIds": [
+        "61492cad-8776-474f-882d-fd09aa4d8e61"
+      ],
+      "createdAt": 1782060558174,
+      "updatedAt": 1782060558176
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "70a067b1-ba2a-45ad-939e-b08962f55b6d",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word",
+      "entityId": "46b9998f-c704-40f6-a625-bf3906f4b5cb",
+      "entityName": "质量缺陷",
+      "action": "create",
+      "operator": "admin_zhang",
+      "after": {
+        "id": "46b9998f-c704-40f6-a625-bf3906f4b5cb",
+        "word": "质量缺陷",
+        "type": "exclusive",
+        "level": "warning",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "createdAt": 1782060552511,
+        "updatedAt": 1782060552511
+      },
+      "timestamp": 1782060552512,
+      "ip": "::1"
+    },
+    {
+      "id": "0dd4ed0e-850d-4491-b5aa-3be68bbb2da7",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word_package",
+      "entityId": "110c1657-cf43-492a-a11f-8f1896be52dd",
+      "entityName": "产品质量词包",
+      "action": "create",
+      "operator": "admin_zhang",
+      "after": {
+        "id": "110c1657-cf43-492a-a11f-8f1896be52dd",
+        "name": "产品质量词包",
+        "type": "exclusive",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "description": "产品质量相关敏感词",
+        "wordIds": [
+          "46b9998f-c704-40f6-a625-bf3906f4b5cb"
+        ],
+        "defaultLevel": "critical",
+        "createdAt": 1782060552517,
+        "updatedAt": 1782060552517
+      },
+      "timestamp": 1782060552518,
+      "ip": "::1"
+    },
+    {
+      "id": "f8116e91-f5f4-4be5-b3b7-dd974333fc3f",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "notification_rule",
+      "entityId": "f0ec5af9-de1a-4391-b283-9b9a2685dc52",
+      "entityName": "wechat-info",
+      "action": "create",
+      "operator": "admin_zhang",
+      "after": {
+        "id": "f0ec5af9-de1a-4391-b283-9b9a2685dc52",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "channel": "wechat",
+        "level": "info",
+        "enabled": true,
+        "sourceFilters": [
+          "新浪微博"
+        ],
+        "wordPackageTypes": [
+          "exclusive"
+        ],
+        "webhookUrl": "https://invalid-url.example.com/test",
+        "retryEnabled": true,
+        "maxRetryCount": 3,
+        "retryIntervalMinutes": 5,
+        "createdAt": 1782060552523,
+        "updatedAt": 1782060552523
+      },
+      "timestamp": 1782060552524,
+      "ip": "::1"
+    },
+    {
+      "id": "00e4fe84-0deb-44b1-8ea7-b5fd39f31557",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "notification_rule",
+      "entityId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+      "entityName": "sms-warning",
+      "action": "create",
+      "operator": "admin_zhang",
+      "after": {
+        "id": "61492cad-8776-474f-882d-fd09aa4d8e61",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "channel": "sms",
+        "level": "warning",
+        "enabled": true,
+        "minScore": 60,
+        "phoneNumbers": [
+          "13800138000"
+        ],
+        "retryEnabled": true,
+        "maxRetryCount": 3,
+        "retryIntervalMinutes": 5,
+        "createdAt": 1782060552529,
+        "updatedAt": 1782060552529
+      },
+      "timestamp": 1782060552530,
+      "ip": "::1"
+    },
+    {
+      "id": "ea44777f-5f9a-479a-a2b4-f0e574ae914a",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word",
+      "entityId": "ef8f71fc-5d47-42b5-a0b8-89beec1a4863",
+      "entityName": "用户投诉",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "ef8f71fc-5d47-42b5-a0b8-89beec1a4863",
+        "word": "用户投诉",
+        "type": "exclusive",
+        "level": "info",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "createdAt": 1782060558143,
+        "updatedAt": 1782060558143
+      },
+      "timestamp": 1782060558144
+    },
+    {
+      "id": "69ec1329-46df-493f-a786-df02595ae933",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word_package",
+      "entityId": "99e0cc3d-6068-4fb9-809d-ea57be25b9ff",
+      "entityName": "用户反馈词包",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "99e0cc3d-6068-4fb9-809d-ea57be25b9ff",
+        "name": "用户反馈词包",
+        "type": "exclusive",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "defaultLevel": "info",
+        "wordIds": [
+          "ef8f71fc-5d47-42b5-a0b8-89beec1a4863",
+          "1a327859-20ab-494f-9677-e2f5cd05fb63"
+        ],
+        "createdAt": 1782060558145,
+        "updatedAt": 1782060558145
+      },
+      "timestamp": 1782060558145
+    },
+    {
+      "id": "3d8d051e-daaf-42bd-8e1e-9be6f5cddebd",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word",
+      "entityId": "1a327859-20ab-494f-9677-e2f5cd05fb63",
+      "entityName": "售后服务差",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "1a327859-20ab-494f-9677-e2f5cd05fb63",
+        "word": "售后服务差",
+        "type": "exclusive",
+        "level": "warning",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "createdAt": 1782060558146,
+        "updatedAt": 1782060558146
+      },
+      "timestamp": 1782060558146
+    },
+    {
+      "id": "3e7e3335-7151-4e67-994f-fe1d05207d14",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word",
+      "entityId": "06b56dc2-009d-49d5-a1c1-989d8ab26566",
+      "entityName": "行业黑幕",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "06b56dc2-009d-49d5-a1c1-989d8ab26566",
+        "word": "行业黑幕",
+        "type": "industry",
+        "level": "critical",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "createdAt": 1782060558147,
+        "updatedAt": 1782060558147
+      },
+      "timestamp": 1782060558148
+    },
+    {
+      "id": "db047d31-2829-4636-a294-d1b756f00b59",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word_package",
+      "entityId": "99c98687-0203-413b-ad93-acc842b9fd5c",
+      "entityName": "行业风险词包",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "99c98687-0203-413b-ad93-acc842b9fd5c",
+        "name": "行业风险词包",
+        "type": "industry",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "defaultLevel": "critical",
+        "wordIds": [
+          "06b56dc2-009d-49d5-a1c1-989d8ab26566"
+        ],
+        "createdAt": 1782060558148,
+        "updatedAt": 1782060558148
+      },
+      "timestamp": 1782060558148
+    },
+    {
+      "id": "6196acda-d8ae-4c5b-837d-ab721aa89fe0",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word",
+      "entityId": "5271806b-447b-47fe-a927-5d2ffa1e9474",
+      "entityName": "产品召回",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "5271806b-447b-47fe-a927-5d2ffa1e9474",
+        "word": "产品召回",
+        "type": "event",
+        "level": "critical",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "createdAt": 1782060558149,
+        "updatedAt": 1782060558149
+      },
+      "timestamp": 1782060558150
+    },
+    {
+      "id": "cbcae55b-eba6-4a99-be8c-7606960c8f2a",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word_package",
+      "entityId": "2ad405d4-4770-4a93-93e0-1759e617f336",
+      "entityName": "315专项词包",
+      "action": "create",
+      "operator": "admin_li(import)",
+      "after": {
+        "id": "2ad405d4-4770-4a93-93e0-1759e617f336",
+        "name": "315专项词包",
+        "type": "event",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "defaultLevel": "critical",
+        "wordIds": [
+          "5271806b-447b-47fe-a927-5d2ffa1e9474"
+        ],
+        "createdAt": 1782060558151,
+        "updatedAt": 1782060558151
+      },
+      "timestamp": 1782060558151
+    },
+    {
+      "id": "c2adf282-31ef-4ef3-96df-839c7404f693",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "word_package",
+      "entityId": "110c1657-cf43-492a-a11f-8f1896be52dd",
+      "entityName": "产品质量词包",
+      "action": "update",
+      "operator": "admin_zhang",
+      "before": {
+        "id": "110c1657-cf43-492a-a11f-8f1896be52dd",
+        "name": "产品质量词包",
+        "type": "exclusive",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "description": "产品质量相关敏感词",
+        "wordIds": [
+          "46b9998f-c704-40f6-a625-bf3906f4b5cb"
+        ],
+        "defaultLevel": "critical",
+        "createdAt": 1782060552517,
+        "updatedAt": 1782060552517
+      },
+      "after": {
+        "id": "110c1657-cf43-492a-a11f-8f1896be52dd",
+        "name": "产品质量词包",
+        "type": "exclusive",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "description": "产品质量相关敏感词",
+        "wordIds": [
+          "46b9998f-c704-40f6-a625-bf3906f4b5cb"
+        ],
+        "defaultLevel": "info",
+        "createdAt": 1782060552517,
+        "updatedAt": 1782060558168
+      },
+      "changes": [
+        "defaultLevel"
+      ],
+      "timestamp": 1782060558169,
+      "ip": "::1"
+    },
+    {
+      "id": "c8e068fe-4ec4-46be-b85e-c52faa395417",
+      "customerId": "de8cc636-154d-4adc-98b8-b58e90e213b5",
+      "entityType": "word",
+      "entityId": "e422a2d2-1686-4253-b4fc-26d065680cd1",
+      "entityName": "客户B专属词",
+      "action": "create",
+      "operator": "system",
+      "after": {
+        "id": "e422a2d2-1686-4253-b4fc-26d065680cd1",
+        "word": "客户B专属词",
+        "type": "exclusive",
+        "level": "info",
+        "customerId": "de8cc636-154d-4adc-98b8-b58e90e213b5",
+        "createdAt": 1782060558183,
+        "updatedAt": 1782060558183
+      },
+      "timestamp": 1782060558184,
+      "ip": "::1"
+    },
+    {
+      "id": "324a40c4-4111-40b2-9c8f-09e8208c8ff0",
+      "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+      "entityType": "notification_rule",
+      "entityId": "61492cad-8776-474f-882d-fd09aa4d8e61",
+      "entityName": "sms-warning",
+      "action": "delete",
+      "operator": "admin_wang",
+      "before": {
+        "id": "61492cad-8776-474f-882d-fd09aa4d8e61",
+        "customerId": "7c9adf39-eae8-4fc4-8421-7db6e9d0142b",
+        "channel": "sms",
+        "level": "warning",
+        "enabled": true,
+        "minScore": 60,
+        "phoneNumbers": [
+          "13800138000"
+        ],
+        "retryEnabled": true,
+        "maxRetryCount": 3,
+        "retryIntervalMinutes": 5,
+        "createdAt": 1782060552529,
+        "updatedAt": 1782060552529
+      },
+      "timestamp": 1782060558213,
+      "ip": "::1"
     }
   ]
 }
